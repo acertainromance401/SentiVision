@@ -1,0 +1,50 @@
+name: DORA MTTR
+
+on:
+  schedule:
+    - cron: '20 0 * * 0'
+  workflow_dispatch:
+
+permissions:
+  issues: read
+
+jobs:
+  mttr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Calculate MTTR from incident issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const now = new Date();
+            const since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'closed',
+              labels: 'incident',
+              since: since.toISOString(),
+              per_page: 100,
+            });
+
+            const incidents = issues.filter(i => !i.pull_request && i.closed_at);
+            const recoveryHours = incidents.map(i => {
+              const created = new Date(i.created_at).getTime();
+              const closed = new Date(i.closed_at).getTime();
+              return (closed - created) / (1000 * 60 * 60);
+            });
+
+            const avg = recoveryHours.length === 0
+              ? 0
+              : recoveryHours.reduce((a, b) => a + b, 0) / recoveryHours.length;
+
+            core.summary
+              .addHeading('DORA: MTTR')
+              .addRaw('Based on closed issues labeled incident in last 30 days.\n\n')
+              .addTable([
+                [{data: 'Window', header: true}, {data: 'Last 30 days', header: false}],
+                [{data: 'Closed incidents', header: true}, {data: String(incidents.length), header: false}],
+                [{data: 'Average recovery time (hours)', header: true}, {data: avg.toFixed(2), header: false}],
+              ])
+              .write();

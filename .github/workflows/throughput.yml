@@ -1,0 +1,39 @@
+name: Team Throughput
+
+on:
+  schedule:
+    - cron: '30 0 * * 0'
+  workflow_dispatch:
+
+permissions:
+  issues: read
+
+jobs:
+  throughput:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Calculate weekly throughput (closed issues)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const now = new Date();
+            const since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'closed',
+              since: since.toISOString(),
+              per_page: 100,
+            });
+
+            const closedIssues = issues.filter(i => !i.pull_request && i.closed_at && i.closed_at >= since.toISOString());
+
+            core.summary
+              .addHeading('Weekly Throughput')
+              .addTable([
+                [{data: 'Window', header: true}, {data: 'Last 7 days', header: false}],
+                [{data: 'Closed issues', header: true}, {data: String(closedIssues.length), header: false}],
+              ])
+              .addRaw('\nFormula: Throughput = closed items / time window\n')
+              .write();
