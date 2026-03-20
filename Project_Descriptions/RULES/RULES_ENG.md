@@ -4,6 +4,9 @@
 
 This document defines the required tech stack and data strategy before migrating the current Python-based pipeline to an iOS app.
 
+Reference baseline:
+- PRD v1.0 is the source of truth for product intent: canvas-based creative UX, analysis API, and feedback API.
+
 Current implementation baseline:
 - Input image analysis
 - Saliency-based key region extraction
@@ -13,19 +16,23 @@ Current implementation baseline:
 
 ## 2) Do We Need Server Infrastructure Right Now?
 
-Conclusion: For MVP, on-device only development is feasible without server/cloud.
+Conclusion: The current validation prototype can run on-device only, but the PRD-aligned MVP should be designed around API contracts.
 
 Required:
 - iOS UI framework
-- Image processing
+- Canvas input and palette extraction
 - Color clustering
 - Emotion classification
-- Local storage
+- Analysis API / feedback API contracts
+- Local or server-backed storage strategy
 
 Optional:
-- Backend API
 - Cloud DB
 - User accounts/sync
+
+Recommended interpretation:
+- Build order can be on-device prototype first, then FastAPI-connected MVP.
+- That means server is not "unnecessary", but "required before productized MVP".
 
 ## 3) Recommended Stack (MVP)
 
@@ -44,7 +51,7 @@ Why:
 - Optional: Accelerate(vDSP) for optimization
 
 Roles:
-- Image resize
+- Canvas pixel and palette processing
 - Color space/pixel processing
 - Saliency-like feature extraction
 
@@ -79,7 +86,12 @@ Given the current project context, SwiftData is the most practical choice.
 
 ## 5) When Server/Cloud Becomes Necessary
 
-Introduce backend when these needs arise:
+For the PRD-aligned MVP, the following should already be designed as API-facing capabilities:
+- Analysis request (`POST /analyze`)
+- Feedback submission (`POST /feedback`)
+- Health check (`GET /health`)
+
+Expand cloud/infrastructure further when these needs arise:
 - Cross-device sync
 - User-specific backup
 - Real-time model/label updates
@@ -118,10 +130,13 @@ Recommended decision:
 ## 7) Recommended Initial Module Composition
 
 - Presentation
-  - ImagePickerView
+  - HomeView
+  - CanvasView
   - AnalysisResultView
   - FeedbackView
+  - HistoryView
 - Domain
+  - PaletteExtractor
   - SaliencyExtractor
   - DominantColorExtractor
   - EmotionClassifier
@@ -129,6 +144,8 @@ Recommended decision:
 - Data
   - EmotionDatasetRepository
   - AnalysisLogRepository
+  - AnalyzeAPIClient
+  - FeedbackAPIClient
   - LocalDatabase (SwiftData/Core Data)
 
 ## 8) Pre-Development Checklist
@@ -137,27 +154,28 @@ Recommended decision:
 - Finalize local DB choice (SwiftData/Core Data)
 - Finalize KNN implementation path (direct vs Core ML)
 - Finalize CSV seeding method (bundle seed)
+- Finalize API request/response schemas (`/analyze`, `/feedback`, `/health`)
 - Finalize privacy policy for image/data storage
 
 ## 9) Proposed Next Steps (No Coding Yet)
 
 1. Draft a 1-page product requirements summary
-2. Define screen flow (capture/select -> analyze -> feedback -> save)
+2. Define screen flow (home -> canvas -> analyze -> feedback -> save)
 3. Finalize initial data model
-4. Confirm iOS minimum target and DB strategy
+4. Confirm iOS minimum target, DB strategy, and API contract
 5. Start Xcode project setup afterward
 
 ## 10) User Decisions Applied (2026-03-18)
 
 The following are now fixed decisions.
 
-1. Emotion categories are fixed.
-2. Users choose emotion from a predefined list grouped by higher-level categories (e.g., positive/negative/neutral).
+1. Results should present one predicted emotion and a ranked score distribution, aligned with the PRD.
+2. Users can submit corrected emotion and an optional note when the result differs from intent.
 3. User feedback is reflected into the dataset only after validation.
-4. Analysis trigger starts as automatic analysis.
-5. Development starts offline-first, then adds sharing features for exhibition/gallery scenarios.
+4. Analysis is triggered by an explicit `Analyze` action.
+5. Development starts with an API-ready MVP, then expands into exhibition/sharing features.
 
-## 11) Emotion Taxonomy (Fixed Labels)
+## 11) Emotion Taxonomy (Initial Operating Set)
 
 ### 11.1 Top-Level Groups
 - Positive
@@ -170,7 +188,7 @@ The following are now fixed decisions.
 - Neutral: calm, neutral/no emotion, focus, observation
 
 Operational rules:
-- Do not change the label set during a release cycle.
+- Keep a stable primary label set for the initial release, but allow future expansion through the PRD feedback loop.
 - If labels must change, migrate by version (e.g., v1 -> v2).
 
 ## 12) Policy for Reflecting Feedback After Validation
@@ -207,21 +225,22 @@ Reflection criteria:
 ## 13) Automatic Analysis Trigger Policy
 
 Default behavior:
-- Run analysis automatically after a short delay (e.g., 0.8s) once drawing stops
+- Run analysis when the user explicitly taps `Analyze`
 
 Exception handling:
-- Skip analysis when canvas changes are too small
-- Debounce analysis calls during continuous drawing to avoid over-triggering
+- Block analysis and show guidance when the extracted palette is insufficient
+- Automatic analysis can be explored later as an experimental mode
 
 UX notes:
-- Show status indicator (analyzing/completed)
+- Show staged loading messages (extracting colors -> computing emotion scores)
 - Provide optional manual "Analyze Again" action
 
-## 14) Offline-First, Then Sharing Expansion Strategy
+## 14) API-First MVP, Then Sharing Expansion Strategy
 
-### 14.1 Phase 1 (Offline)
-- All analysis and storage are on-device
-- Save only to local DB (SwiftData/Core Data)
+### 14.1 Phase 1 (MVP)
+- The app provides canvas input plus result and feedback UI
+- Analysis and feedback connect to FastAPI or an equivalent API layer
+- Local DB can still be used for history and temporary storage
 
 ### 14.2 Phase 2 (Sharing Features)
 - Add exhibition/gallery-oriented sharing capabilities:
@@ -231,7 +250,7 @@ UX notes:
   - Curated feed
 
 ### 14.3 Phase 3 (Backend Introduction)
-- Build backend for sync and sharing
+- Expand backend for sync and sharing at scale
 - Recommended setup:
   - API: FastAPI or BaaS(Firebase/Supabase)
   - DB: PostgreSQL
