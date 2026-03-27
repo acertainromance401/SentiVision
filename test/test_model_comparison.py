@@ -12,6 +12,8 @@ Created on 2026-03-25
 """
 
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')  # 헤드리스 환경에서도 이미지 파일 저장 보장
 import matplotlib.pyplot as plt
 import cv2
 from sklearn.neighbors import KNeighborsClassifier
@@ -23,11 +25,24 @@ import numpy as np
 import sys
 import os
 import warnings
+from datetime import datetime
+from pathlib import Path
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(BASE_DIR, 'color_emotion_labeled_updated.csv')
 OUTPUT_DIR = os.path.join(BASE_DIR, 'outputs')
+RUN_TAG = datetime.now().strftime('%Y%m%d_%H%M%S')
+OUTPUT_PREFIX = f'comparison_{RUN_TAG}'
+SAVE_EXTRA_DEBUG_PLOTS = False  # True면 RGB 3D, Saliency 디버그 이미지를 추가 저장
+
+PLOT_FILES = {
+    'dashboard': f'{OUTPUT_PREFIX}_performance_dashboard.png',
+    'rgb_3d': f'{OUTPUT_PREFIX}_rgb_3d_distribution.png',
+    'saliency': f'{OUTPUT_PREFIX}_saliency_maps.png',
+    'dominant': f'{OUTPUT_PREFIX}_dominant_color_emotions.png',
+    'prediction_pair': f'{OUTPUT_PREFIX}_knn_rf_color_pair.png',
+}
 
 warnings.filterwarnings(
     "ignore",
@@ -43,20 +58,27 @@ def setup_plot_style():
 
 
 def finalize_plot(filename):
-    """
-    백엔드에 따라 플롯 출력 방식을 분기한다.
-    - Agg 계열(헤드리스 환경): 파일 저장
-    - GUI 백엔드: 화면 표시
-    """
-    backend = plt.get_backend().lower()
-    if 'agg' in backend:
-        os.makedirs(OUTPUT_DIR, exist_ok=True)
-        save_path = os.path.join(OUTPUT_DIR, filename)
-        plt.savefig(save_path, dpi=150, bbox_inches='tight')
-        plt.close()
-        print(f"[plot saved] {save_path}")
-    else:
-        plt.show()
+    """플롯을 파일로 저장한다. (Agg 백엔드 사용)"""
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    save_path = os.path.join(OUTPUT_DIR, filename)
+    plt.savefig(save_path, dpi=150, bbox_inches='tight')
+    plt.close()
+    print(f"✓ 이미지 저장: {save_path}")
+
+
+def cleanup_old_comparison_outputs():
+    """현재 실행 결과를 제외한 과거 comparison 출력 이미지를 정리한다."""
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    keep_files = set(PLOT_FILES.values())
+    removed = 0
+    for old_file in Path(OUTPUT_DIR).glob('comparison_*.png'):
+        if old_file.name in keep_files:
+            continue
+        old_file.unlink()
+        removed += 1
+
+    if removed > 0:
+        print(f"✓ 구버전 comparison 이미지 정리: {removed}개 삭제")
 
 
 TYPO_LABEL_MAP = {
@@ -149,81 +171,87 @@ def evaluate_models(knn, rf, X_test, y_test):
     return results
 
 
-def plot_model_comparison(results):
-    """모델 성능 비교 시각화."""
+def plot_performance_dashboard(results):
+    """정확도/F1/혼동행렬을 2x2 대시보드 한 장으로 저장한다."""
     knn_acc = results['knn_acc']
     rf_acc = results['rf_acc']
     knn_f1 = results['knn_f1']
     rf_f1 = results['rf_f1']
-    
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-    
+
+    knn_cm = results['knn_cm']
+    rf_cm = results['rf_cm']
+    classes = results['classes']
+
+    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+
     # 정확도 비교
     models = ['KNN', 'RandomForest']
     accuracies = [knn_acc, rf_acc]
     colors = ['#FF6B6B', '#4ECDC4']
-    axes[0].bar(models, accuracies, color=colors, alpha=0.7, edgecolor='black', linewidth=2)
-    axes[0].set_ylabel('Accuracy', fontsize=12)
-    axes[0].set_title('Model Accuracy Comparison', fontsize=14, fontweight='bold')
-    axes[0].set_ylim([0, 1])
+    axes[0, 0].bar(models, accuracies, color=colors, alpha=0.7, edgecolor='black', linewidth=2)
+    axes[0, 0].set_ylabel('Accuracy', fontsize=12)
+    axes[0, 0].set_title('Model Accuracy Comparison', fontsize=14, fontweight='bold')
+    axes[0, 0].set_ylim([0, 1])
     for i, acc in enumerate(accuracies):
-        axes[0].text(i, acc + 0.02, f'{acc:.3f}', ha='center', fontsize=11, fontweight='bold')
-    
+        axes[0, 0].text(i, acc + 0.02, f'{acc:.3f}', ha='center', fontsize=11, fontweight='bold')
+
     # F1 스코어 비교
     f1_scores = [knn_f1, rf_f1]
-    axes[1].bar(models, f1_scores, color=colors, alpha=0.7, edgecolor='black', linewidth=2)
-    axes[1].set_ylabel('F1 Score (Weighted)', fontsize=12)
-    axes[1].set_title('Model F1 Score Comparison', fontsize=14, fontweight='bold')
-    axes[1].set_ylim([0, 1])
+    axes[0, 1].bar(models, f1_scores, color=colors, alpha=0.7, edgecolor='black', linewidth=2)
+    axes[0, 1].set_ylabel('F1 Score (Weighted)', fontsize=12)
+    axes[0, 1].set_title('Model F1 Score Comparison', fontsize=14, fontweight='bold')
+    axes[0, 1].set_ylim([0, 1])
     for i, f1 in enumerate(f1_scores):
-        axes[1].text(i, f1 + 0.02, f'{f1:.3f}', ha='center', fontsize=11, fontweight='bold')
-    
-    plt.tight_layout()
-    finalize_plot('model_comparison_metrics.png')
+        axes[0, 1].text(i, f1 + 0.02, f'{f1:.3f}', ha='center', fontsize=11, fontweight='bold')
 
-
-def plot_confusion_matrices(results):
-    """혼동 행렬 시각화."""
-    knn_cm = results['knn_cm']
-    rf_cm = results['rf_cm']
-    classes = results['classes']
-    
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-    
     # KNN 혼동 행렬
-    im0 = axes[0].imshow(knn_cm, cmap='Blues', aspect='auto')
-    axes[0].set_title('KNN Confusion Matrix', fontsize=14, fontweight='bold')
-    axes[0].set_ylabel('True Label', fontsize=11)
-    axes[0].set_xlabel('Predicted Label', fontsize=11)
-    axes[0].set_xticks(range(len(classes)))
-    axes[0].set_yticks(range(len(classes)))
-    axes[0].set_xticklabels(classes, rotation=45, ha='right')
-    axes[0].set_yticklabels(classes)
+    im0 = axes[1, 0].imshow(knn_cm, cmap='Blues', aspect='auto')
+    axes[1, 0].set_title('KNN Confusion Matrix', fontsize=14, fontweight='bold')
+    axes[1, 0].set_ylabel('True Label', fontsize=11)
+    axes[1, 0].set_xlabel('Predicted Label', fontsize=11)
+    axes[1, 0].set_xticks(range(len(classes)))
+    axes[1, 0].set_yticks(range(len(classes)))
+    axes[1, 0].set_xticklabels(classes, rotation=45, ha='right')
+    axes[1, 0].set_yticklabels(classes)
     # 셀에 값 표시
     for i in range(len(classes)):
         for j in range(len(classes)):
-            text = axes[0].text(j, i, int(knn_cm[i, j]),
-                              ha="center", va="center", color="black", fontsize=10)
-    plt.colorbar(im0, ax=axes[0], label='Count')
-    
+            axes[1, 0].text(
+                j,
+                i,
+                int(knn_cm[i, j]),
+                ha="center",
+                va="center",
+                color="black",
+                fontsize=10,
+            )
+    plt.colorbar(im0, ax=axes[1, 0], label='Count')
+
     # RandomForest 혼동 행렬
-    im1 = axes[1].imshow(rf_cm, cmap='Greens', aspect='auto')
-    axes[1].set_title('RandomForest Confusion Matrix', fontsize=14, fontweight='bold')
-    axes[1].set_ylabel('True Label', fontsize=11)
-    axes[1].set_xlabel('Predicted Label', fontsize=11)
-    axes[1].set_xticks(range(len(classes)))
-    axes[1].set_yticks(range(len(classes)))
-    axes[1].set_xticklabels(classes, rotation=45, ha='right')
-    axes[1].set_yticklabels(classes)
+    im1 = axes[1, 1].imshow(rf_cm, cmap='Greens', aspect='auto')
+    axes[1, 1].set_title('RandomForest Confusion Matrix', fontsize=14, fontweight='bold')
+    axes[1, 1].set_ylabel('True Label', fontsize=11)
+    axes[1, 1].set_xlabel('Predicted Label', fontsize=11)
+    axes[1, 1].set_xticks(range(len(classes)))
+    axes[1, 1].set_yticks(range(len(classes)))
+    axes[1, 1].set_xticklabels(classes, rotation=45, ha='right')
+    axes[1, 1].set_yticklabels(classes)
     # 셀에 값 표시
     for i in range(len(classes)):
         for j in range(len(classes)):
-            text = axes[1].text(j, i, int(rf_cm[i, j]),
-                              ha="center", va="center", color="black", fontsize=10)
-    plt.colorbar(im1, ax=axes[1], label='Count')
-    
+            axes[1, 1].text(
+                j,
+                i,
+                int(rf_cm[i, j]),
+                ha="center",
+                va="center",
+                color="black",
+                fontsize=10,
+            )
+    plt.colorbar(im1, ax=axes[1, 1], label='Count')
+
     plt.tight_layout()
-    finalize_plot('confusion_matrices_comparison.png')
+    finalize_plot(PLOT_FILES['dashboard'])
 
 
 def print_detailed_report(results):
@@ -247,20 +275,107 @@ def print_detailed_report(results):
     print("="*70 + "\n")
 
 
+def plot_rgb_3d_distribution(color_map):
+    """학습 데이터 RGB 분포를 3D로 시각화해 저장한다."""
+    fig = plt.figure(figsize=(12, 10))
+    ax = fig.add_subplot(111, projection='3d')
+    for _, row in color_map.iterrows():
+        color = (row['R_norm'], row['G_norm'], row['B_norm'])
+        ax.scatter(row['R'], row['G'], row['B'], color=color, s=100)
+        ax.text(row['R'], row['G'], row['B'] + 5, f"{row['emotion']}", fontsize=8)
+    ax.set_xlabel('Red')
+    ax.set_ylabel('Green')
+    ax.set_zlabel('Blue')
+    ax.set_title('RGB 3Dimension', fontsize=15)
+    plt.tight_layout()
+    finalize_plot(PLOT_FILES['rgb_3d'])
+
+
+def plot_saliency_maps(saliency_map, salient_mask):
+    """Saliency map과 mask를 저장한다."""
+    plt.figure(figsize=(8, 4))
+    plt.subplot(1, 2, 1)
+    plt.title("Saliency Map")
+    plt.imshow(saliency_map, cmap="gray")
+    plt.axis("off")
+
+    plt.subplot(1, 2, 2)
+    plt.title("Salient Region Mask")
+    plt.imshow(salient_mask, cmap="gray")
+    plt.axis("off")
+    plt.tight_layout()
+    finalize_plot(PLOT_FILES['saliency'])
+
+
+def plot_dominant_color_emotions(dominant_colors, knn, rf):
+    """대표 색상과 KNN/RF 예측 감정을 함께 시각화해 저장한다."""
+    plt.figure(figsize=(14, 6))
+    for i, (r, g, b) in enumerate(dominant_colors):
+        knn_emotion = emotion_from_rgb_knn(knn, r, g, b)
+        rf_emotion = emotion_from_rgb_rf(rf, r, g, b)
+        plt.bar(i, 1, color=(r / 255, g / 255, b / 255))
+        plt.text(
+            i,
+            1.05,
+            f"KNN: {knn_emotion}\nRF: {rf_emotion}",
+            ha='center',
+            va='bottom',
+            fontsize=9,
+        )
+
+    plt.xticks(range(len(dominant_colors)), [f'Color {i + 1}' for i in range(len(dominant_colors))])
+    plt.yticks([])
+    plt.tight_layout()
+    finalize_plot(PLOT_FILES['dominant'])
+
+
+def plot_knn_rf_color_pair(dominant_colors, knn, rf):
+    """대표 색상에 대한 KNN/RF 예측을 좌우 서브플롯 한 쌍으로 저장한다."""
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+
+    model_specs = [
+        (axes[0], 'KNN', knn, emotion_from_rgb_knn),
+        (axes[1], 'RandomForest', rf, emotion_from_rgb_rf),
+    ]
+
+    for ax, model_name, model_obj, predictor in model_specs:
+        for i, (r, g, b) in enumerate(dominant_colors):
+            emotion = predictor(model_obj, r, g, b)
+            ax.bar(i, 1, color=(r / 255, g / 255, b / 255))
+            ax.text(i, 1.05, emotion, ha='center', va='bottom', fontsize=10)
+
+        ax.set_title(f'{model_name} Color Emotion Prediction', fontsize=13, fontweight='bold')
+        ax.set_xticks(range(len(dominant_colors)))
+        ax.set_xticklabels([f'Color {i + 1}' for i in range(len(dominant_colors))])
+        ax.set_yticks([])
+        ax.set_ylim([0, 1.2])
+
+    plt.tight_layout()
+    finalize_plot(PLOT_FILES['prediction_pair'])
+
+
 def main():
     """모델 비교 파이프라인 실행."""
     setup_plot_style()
+    cleanup_old_comparison_outputs()
     
     print("[Step 1] CSV 로드 및 데이터 준비")
     # 데이터 로드
     color_map = pd.read_csv(DATA_PATH)
     color_map = pd.DataFrame(color_map)
     
+    # 데이터셋 스키마 차이를 흡수: emotion/Emotion 모두 지원
     if 'emotion' in color_map.columns:
-        color_map['emotion'] = color_map['emotion'].map(normalize_emotion_label)
+        emotion_col = 'emotion'
+    elif 'Emotion' in color_map.columns:
+        emotion_col = 'Emotion'
+    else:
+        raise KeyError("감정 라벨 컬럼(emotion 또는 Emotion)을 찾을 수 없습니다.")
+
+    color_map[emotion_col] = color_map[emotion_col].map(normalize_emotion_label)
     
     print(f"  Total samples: {len(color_map)}")
-    print(f"  Emotion classes: {color_map['emotion'].nunique()}")
+    print(f"  Emotion classes: {color_map[emotion_col].nunique()}")
     
     # RGB 정규화
     color_map['R_norm'] = color_map['R'] / 255
@@ -269,12 +384,31 @@ def main():
     
     # 학습용 데이터 분리
     X = color_map[['R_norm', 'G_norm', 'B_norm']]
-    y = color_map['emotion']
+    y = color_map[emotion_col]
+
+    # 출력 파일 과다 생성을 줄이기 위해 디버그 플롯은 선택 저장
+    if SAVE_EXTRA_DEBUG_PLOTS:
+        print("\n[Step 1-1] RGB 3D 분포 시각화 저장")
+        plot_rgb_3d_distribution(color_map)
     
     # Train/Test 분리 (8:2 비율, stratified)
-    print("\n[Step 2] Train/Test 분리 (80/20, stratified)")
+    print("\n[Step 2] Train/Test 분리 (80/20)")
+    class_counts = y.value_counts()
+    can_stratify = class_counts.min() >= 2
+
+    if can_stratify:
+        print("  - Stratified split: 사용")
+        stratify_target = y
+    else:
+        print("  - Stratified split: 생략 (일부 클래스 샘플 수 < 2)")
+        stratify_target = None
+
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
+        X,
+        y,
+        test_size=0.2,
+        random_state=42,
+        stratify=stratify_target,
     )
     print(f"  Train set: {len(X_train)} samples")
     print(f"  Test set : {len(X_test)} samples")
@@ -291,20 +425,26 @@ def main():
     results = evaluate_models(knn, rf, X_test, y_test)
     
     # 교차검증 (5-fold)
-    print("\n[Step 5] 교차검증 (5-fold)")
-    knn_cv_scores = cross_val_score(knn, X_train, y_train, cv=5, scoring='accuracy')
-    rf_cv_scores = cross_val_score(rf, X_train, y_train, cv=5, scoring='accuracy')
-    
-    print(f"  KNN CV Accuracy       : {knn_cv_scores.mean():.4f} (+/- {knn_cv_scores.std():.4f})")
-    print(f"  RandomForest CV Accuracy : {rf_cv_scores.mean():.4f} (+/- {rf_cv_scores.std():.4f})")
+    print("\n[Step 5] 교차검증")
+    train_min_class = y_train.value_counts().min()
+    cv_folds = min(5, int(train_min_class))
+
+    if cv_folds >= 2:
+        print(f"  - CV folds: {cv_folds}")
+        knn_cv_scores = cross_val_score(knn, X_train, y_train, cv=cv_folds, scoring='accuracy')
+        rf_cv_scores = cross_val_score(rf, X_train, y_train, cv=cv_folds, scoring='accuracy')
+
+        print(f"  KNN CV Accuracy          : {knn_cv_scores.mean():.4f} (+/- {knn_cv_scores.std():.4f})")
+        print(f"  RandomForest CV Accuracy : {rf_cv_scores.mean():.4f} (+/- {rf_cv_scores.std():.4f})")
+    else:
+        print("  - 교차검증 생략 (훈련 데이터의 최소 클래스 샘플 수 < 2)")
     
     # 상세 보고서 출력
     print_detailed_report(results)
     
     # 시각화
     print("[Step 6] 시각화")
-    plot_model_comparison(results)
-    plot_confusion_matrices(results)
+    plot_performance_dashboard(results)
     print("  ✓ 시각화 완료")
     
     # 시뮬레이션: 원본 main_.py처럼 이미지 분석 후 모델 적용
@@ -334,6 +474,10 @@ def main():
     laplacian = cv2.Laplacian(blurred, cv2.CV_64F)
     saliencyMap = np.uint8(np.absolute(laplacian))
     _, salient_mask = cv2.threshold(saliencyMap, 10, 255, cv2.THRESH_BINARY)
+
+    # 출력 파일 과다 생성을 줄이기 위해 디버그 플롯은 선택 저장
+    if SAVE_EXTRA_DEBUG_PLOTS:
+        plot_saliency_maps(saliencyMap, salient_mask)
     
     salient_pixels = img_resized[salient_mask == 255].reshape(-1, 3)
     
@@ -360,6 +504,9 @@ def main():
         print(f"Color {i+1} RGB({int(r)}, {int(g)}, {int(b)})")
         print(f"  KNN          : {knn_emotion}")
         print(f"  RandomForest : {rf_emotion} {agreement}")
+
+    # KNN/RF를 좌우 서브플롯 한 쌍으로 저장
+    plot_knn_rf_color_pair(dominant_colors, knn, rf)
 
 
 if __name__ == '__main__':

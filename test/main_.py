@@ -23,11 +23,20 @@ import numpy as np
 import sys
 import os
 import warnings
+from datetime import datetime
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(BASE_DIR, 'color_emotion_labeled_updated.csv')
 OUTPUT_DIR = os.path.join(BASE_DIR, 'outputs')
+RUN_TAG = datetime.now().strftime('%Y%m%d_%H%M%S')
+OUTPUT_PREFIX = f'main_{RUN_TAG}'
+
+PLOT_FILES = {
+    'rgb_3d': f'{OUTPUT_PREFIX}_rgb_3d_distribution.png',
+    'saliency': f'{OUTPUT_PREFIX}_saliency_maps.png',
+    'dominant': f'{OUTPUT_PREFIX}_dominant_color_emotions.png',
+}
 
 warnings.filterwarnings(
     "ignore",
@@ -174,7 +183,7 @@ def main():
     ax.set_zlabel('Blue')
     ax.set_title('RGB 3Dimention', fontsize=15)
     plt.tight_layout()
-    finalize_plot('rgb_3d_distribution.png')
+    finalize_plot(PLOT_FILES['rgb_3d'])
 
     # 5) 분석할 이미지 경로 입력
     try:
@@ -246,7 +255,7 @@ def main():
     plt.imshow(salient_mask, cmap="gray")
     plt.axis("off")
     plt.tight_layout()
-    finalize_plot('saliency_maps.png')
+    finalize_plot(PLOT_FILES['saliency'])
 
     # 11) 주요 색상과 예측 감정을 막대 형태로 시각화
     plt.figure(figsize=(12, 6))
@@ -258,7 +267,7 @@ def main():
     plt.xticks(range(len(dominant_colors)), [f'Color {i + 1}' for i in range(len(dominant_colors))])
     plt.yticks([])
     plt.tight_layout()
-    finalize_plot('dominant_color_emotions.png')
+    finalize_plot(PLOT_FILES['dominant'])
 
     # 12) 사용자 검증/피드백 수집
     #     사용자가 예측에 동의하지 않으면 해당 RGB에 새 감정 라벨을 기록
