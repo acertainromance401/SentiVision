@@ -1,7 +1,7 @@
 # Wireframe: SentiVision (PRD 정렬 버전)
 
-작성일: 2026-03-25  
-문서 버전: v1.4
+작성일: 2026-03-27  
+문서 버전: v1.5
 
 ## 1. 인터랙션 구조 개요
 
@@ -122,6 +122,8 @@
 ```text
 $ source .venv/bin/activate
 $ python test/main_.py
+# 또는
+$ python test/run_all_analysis.py
 ```
 
 ### Step B. 분석/피드백
@@ -136,9 +138,10 @@ $ python test/main_.py
 ### Step C. 산출물
 
 ```text
-[plot saved] test/outputs/rgb_3d_distribution.png
-[plot saved] test/outputs/saliency_maps.png
-[plot saved] test/outputs/dominant_color_emotions.png
+✓ 이미지 저장: main_YYYYMMDD_HHMMSS_rgb_3d_distribution.png
+✓ 이미지 저장: main_YYYYMMDD_HHMMSS_saliency_maps.png
+✓ 이미지 저장: main_YYYYMMDD_HHMMSS_dominant_color_emotions.png
+✓ 이미지 저장: comparison_YYYYMMDD_HHMMSS_performance_dashboard.png
 ```
 
 ---

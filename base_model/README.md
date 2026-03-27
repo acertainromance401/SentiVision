@@ -17,7 +17,7 @@
 .
 ├── LICENSE
 ├── README.md
-└── test
+└── base_model
 	├── C500x500.jpeg
 	├── LICENSES
 	│   └── MIT-sophiwoods-color-associations.txt
@@ -59,7 +59,7 @@ pip install pandas matplotlib opencv-python scikit-learn numpy
 프로젝트 루트에서 실행:
 
 ```bash
-python test/main_.py
+python base_model/main_.py
 ```
 
 실행 중 입력:
@@ -72,23 +72,23 @@ python test/main_.py
 예시:
 
 ```text
-분석할 이미지 파일 경로를 입력하세요: test/C500x500.jpeg
+분석할 이미지 파일 경로를 입력하세요: base_model/C500x500.jpeg
 ```
 
 ## 출력 결과
 
 아래 시각화 결과가 생성/갱신됩니다.
 
-- test/outputs/rgb_3d_distribution.png
-- test/outputs/saliency_maps.png
-- test/outputs/dominant_color_emotions.png
+- base_model/outputs/rgb_3d_distribution.png
+- base_model/outputs/saliency_maps.png
+- base_model/outputs/dominant_color_emotions.png
 
 또한 사용자 피드백이 있을 경우 데이터셋 파일이 갱신됩니다.
 
-- test/color_emotion_labeled_updated.csv
+- base_model/color_emotion_labeled_updated.csv
 
 ## 라이선스 및 고지
 
 - 프로젝트 라이선스: LICENSE
-- 서드파티 고지: test/THIRD_PARTY_NOTICES.md
-- MIT 라이선스 원문: test/LICENSES/MIT-sophiwoods-color-associations.txt
+- 서드파티 고지: base_model/THIRD_PARTY_NOTICES.md
+- MIT 라이선스 원문: base_model/LICENSES/MIT-sophiwoods-color-associations.txt

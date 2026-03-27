@@ -1,7 +1,7 @@
 # WBS-to-Codebase 매핑 및 구현 우선순위
 
-작성일: 2026-03-25  
-기준 버전: WBS v1.4, PRD v1.0  
+작성일: 2026-03-27  
+기준 버전: WBS v1.5, PRD v1.0  
 
 ---
 
@@ -13,10 +13,10 @@
 | **2. 요구사항/문서 정합화** | `Project_Descriptions` 세트 | `Project_Descriptions/*.md` | 완료 (2026-03-25) | 문제 정의 정렬 상태 주간 점검 |
 | **3. 캔버스 UX 설계** | 와이어프레임, 화면 흐름도 | `Project_Descriptions/Wireframe_SentiVision.md` | 완료 (설계 단계) | SwiftUI 프로토타입 구현 필요 |
 | **4. API 설계/구현** | API 명세, FastAPI 코드 | 설계만 완료 / 구현 미작 | 설계 단계 | FastAPI 프로젝트 생성 + 4.1~4.4 구현 |
-| **5. 분석 엔진/데이터 파이프라인** | KNN/KMeans 로직, 데이터 품질 리포트 | `test/main_.py` (라인 40~150) | 진행 중 (CLI) | 엔진 모듈화 + API 연동 + 학습 파이프라인 |
-| **6. 피드백 루프** | CSV 업데이트, 피드백 처리 로그 | `test/main_.py` (라인 210~250) | 진행 중 (CLI) | 앱 피드백 수집 UI + API 엔드포인트 |
-| **7. 시각화/리포팅** | RGB 3D, Saliency, 감정-색상 차트 | `test/main_.py` (라인 80~140) 및 `test/outputs/` | 완료 (3 PNG 생성) | 앱 내 시각화 UI 통합 필요 |
-| **8. 테스트/검증** | pytest API 테스트, 사용자 시나리오 테스트 | 없음 | 미시작 | `tests/` 폴더 생성 + pytest 작성 |
+| **5. 분석 엔진/데이터 파이프라인** | KNN/KMeans 로직, 데이터 품질 리포트 | `test/main_.py`, `test/test_model_comparison.py` | 진행 중 (CLI) | 엔진 모듈화 + API 연동 + 학습 파이프라인 |
+| **6. 피드백 루프** | CSV 업데이트, 피드백 처리 로그 | `test/main_.py`, `test/outputs/comparison_user_feedback.csv` | 진행 중 (CLI) | 앱 피드백 수집 UI + API 엔드포인트 |
+| **7. 시각화/리포팅** | RGB 3D, Saliency, 감정-색상 차트, 성능 대시보드 | `test/outputs/` | 완료 (타임스탬프 PNG 생성) | 앱 내 시각화 UI 통합 필요 |
+| **8. 테스트/검증** | pytest API 테스트, 사용자 시나리오 테스트 | `test/test_model_comparison.py`, `test/fixed_validation_indices.json` | 진행 중 | `tests/` 폴더 생성 + pytest 작성 |
 | **9. 운영/배포 준비** | KPI 수집, DORA 연계, 배포 체크리스트 | 없음 | 미시작 | CI/CD 파이프라인 설정 |
 
 ---
@@ -25,15 +25,15 @@
 
 ### WBS 5 — 분석 엔진/데이터 파이프라인
 
-#### 현 위치: `test/main_.py`
+#### 현 위치: `test/main_.py`, `test/test_model_comparison.py`
 
-| 함수/로직 | 라인 | 기능 | 상태 | 마이그레이션 경로 |
+| 함수/로직 | 위치 | 기능 | 상태 | 마이그레이션 경로 |
 |---------|------|------|------|---------|
-| `emotion_from_rgb(knn_model, r, g, b)` | 25~31 | RGB 0~255 → 감정 예측 | ✅ 완료 | API `/analyze` 엔드포인트의 핵심 로직 |
-| KNN 학습 | 44~47 | 데이터셋 기반 KNN 초기화 | ✅ 완료 | 모듈 분리 + 모델 저장/로드 기능 추가 |
-| KMeans 클러스터링 | 99~104 | 현저성 마스크 내 주요색 추출 | ✅ 완료 | 팔레트 정규화 로직과 결합 |
-| 현저성 맵 | 88~98 | 이미지 saliency 추출 | ✅ 완료 | iOS앱: 현저성 필터 선택 로직으로 대체 필요 |
-| CSV 업데이트 루프 | 145~160 | 피드백 반영, 중복 제거 | ✅ 완료 | 데이터베이스 또는 API 기반 관리로 전환 |
+| `emotion_from_rgb(knn_model, r, g, b)` | `test/main_.py` | RGB 0~255 → 감정 예측 | ✅ 완료 | API `/analyze` 엔드포인트의 핵심 로직 |
+| KNN 학습 | `test/main_.py` | 데이터셋 기반 KNN 초기화 | ✅ 완료 | 모듈 분리 + 모델 저장/로드 기능 추가 |
+| RandomForest 학습 | `test/test_model_comparison.py` | 모델 비교용 보조 분류기 학습 | ✅ 완료 | 실험 트랙 유지 또는 API 후보 모델 평가 |
+| KMeans 클러스터링 | `test/main_.py`, `test/test_model_comparison.py` | 현저성 마스크 내 주요색 추출 | ✅ 완료 | 팔레트 정규화 로직과 결합 |
+| CSV 업데이트 루프 | `test/main_.py` | 피드백 반영, 중복 제거 | ✅ 완료 | 데이터베이스 또는 API 기반 관리로 전환 |
 
 **MLP 권장사항**: 
 - 단계 1: `emotion_from_rgb()` 추출 → `sentipy/models/emotion.py` 
@@ -222,7 +222,8 @@ sentipy/
 #### Step 2: 테스트 작성 (1주)
 - API unit test (pytest)
 - iOS UI 시나리오 테스트
-- CLI 회귀 테스트 (test/main_.py 검증)
+- CLI 회귀 테스트 (`test/main_.py` 검증)
+- 고정 검증 인덱스 기반 모델 비교 테스트 (`test/test_model_comparison.py` 검증)
 
 **산출물**: 테스트 커버리지 70% 이상
 
@@ -250,7 +251,7 @@ sentipy/
 
 ---
 
-## 6. 현재 상태 요약 (2026-03-20)
+## 6. 현재 상태 요약 (2026-03-27)
 
 | 항목 | 상태 | 예상 소요 |
 |------|------|---------|
@@ -261,7 +262,7 @@ sentipy/
 | 캔버스 UX 설계 | ✅ 완료 | 사료됨 |
 | 캔버스 구현 | ⏳ 미시작 | 2~3주 |
 | 피드백 로직 | 🔄 부분 완료 (CLI만) | 1~2주 |
-| 테스트 자동화 | ❌ 미시작 | 2주 |
+| 테스트 자동화 | 🔄 부분 완료 (CLI 비교 스크립트) | 1~2주 |
 | 배포 자동화 | ❌ 미시작 | 1~2주 |
 
 **다음 액션 (즉시)**:
