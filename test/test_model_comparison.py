@@ -35,6 +35,9 @@ OUTPUT_DIR = os.path.join(BASE_DIR, 'outputs')
 RUN_TAG = datetime.now().strftime('%Y%m%d_%H%M%S')
 OUTPUT_PREFIX = f'comparison_{RUN_TAG}'
 SAVE_EXTRA_DEBUG_PLOTS = False  # True면 RGB 3D, Saliency 디버그 이미지를 추가 저장
+REPEATED_EVAL_RUNS = 30  # 단일 분할 편차를 줄이기 위한 반복 평가 횟수
+RF_ADV_MARGIN_ACC = 0.03  # RF 우세 판정용 최소 Accuracy 평균 격차
+RF_ADV_MARGIN_F1 = 0.03   # RF 우세 판정용 최소 F1 평균 격차
 
 PLOT_FILES = {
     'dashboard': f'{OUTPUT_PREFIX}_performance_dashboard.png',
@@ -171,7 +174,70 @@ def evaluate_models(knn, rf, X_test, y_test):
     return results
 
 
-def plot_performance_dashboard(results):
+def repeated_holdout_comparison(X, y, runs=REPEATED_EVAL_RUNS, test_size=0.2):
+    """여러 랜덤 분할로 KNN/RF를 반복 평가해 평균/분산을 계산한다."""
+    knn_acc_scores = []
+    rf_acc_scores = []
+    knn_f1_scores = []
+    rf_f1_scores = []
+
+    class_counts = y.value_counts()
+    can_stratify = class_counts.min() >= 2
+    stratify_target = y if can_stratify else None
+
+    for seed in range(runs):
+        X_train_r, X_test_r, y_train_r, y_test_r = train_test_split(
+            X,
+            y,
+            test_size=test_size,
+            random_state=42 + seed,
+            stratify=stratify_target,
+        )
+
+        knn_r, rf_r = train_models(X_train_r, y_train_r)
+        eval_r = evaluate_models(knn_r, rf_r, X_test_r, y_test_r)
+
+        knn_acc_scores.append(eval_r['knn_acc'])
+        rf_acc_scores.append(eval_r['rf_acc'])
+        knn_f1_scores.append(eval_r['knn_f1'])
+        rf_f1_scores.append(eval_r['rf_f1'])
+
+    knn_acc_arr = np.array(knn_acc_scores)
+    rf_acc_arr = np.array(rf_acc_scores)
+    knn_f1_arr = np.array(knn_f1_scores)
+    rf_f1_arr = np.array(rf_f1_scores)
+
+    summary = {
+        'runs': runs,
+        'can_stratify': can_stratify,
+        'knn_acc_mean': float(knn_acc_arr.mean()),
+        'rf_acc_mean': float(rf_acc_arr.mean()),
+        'knn_acc_std': float(knn_acc_arr.std()),
+        'rf_acc_std': float(rf_acc_arr.std()),
+        'knn_f1_mean': float(knn_f1_arr.mean()),
+        'rf_f1_mean': float(rf_f1_arr.mean()),
+        'knn_f1_std': float(knn_f1_arr.std()),
+        'rf_f1_std': float(rf_f1_arr.std()),
+        'acc_diff_mean': float((rf_acc_arr - knn_acc_arr).mean()),
+        'f1_diff_mean': float((rf_f1_arr - knn_f1_arr).mean()),
+        'rf_acc_win_rate': float((rf_acc_arr > knn_acc_arr).mean()),
+        'rf_f1_win_rate': float((rf_f1_arr > knn_f1_arr).mean()),
+    }
+
+    summary['rf_better_mean'] = (
+        summary['rf_acc_mean'] > summary['knn_acc_mean']
+        and summary['rf_f1_mean'] > summary['knn_f1_mean']
+    )
+    summary['rf_better_margin'] = (
+        summary['acc_diff_mean'] >= RF_ADV_MARGIN_ACC
+        and summary['f1_diff_mean'] >= RF_ADV_MARGIN_F1
+    )
+    summary['rf_better_robust'] = summary['rf_better_margin']
+
+    return summary
+
+
+def plot_performance_dashboard(results, repeated_summary=None):
     """정확도/F1/혼동행렬을 2x2 대시보드 한 장으로 저장한다."""
     knn_acc = results['knn_acc']
     rf_acc = results['rf_acc']
@@ -250,7 +316,26 @@ def plot_performance_dashboard(results):
             )
     plt.colorbar(im1, ax=axes[1, 1], label='Count')
 
-    plt.tight_layout()
+    if repeated_summary is not None:
+        summary_text = (
+            f"Repeated({repeated_summary['runs']}) "
+            f"Acc KNN/RF: {repeated_summary['knn_acc_mean']:.3f}/{repeated_summary['rf_acc_mean']:.3f} "
+            f"Win {repeated_summary['rf_acc_win_rate'] * 100:.1f}% | "
+            f"F1 KNN/RF: {repeated_summary['knn_f1_mean']:.3f}/{repeated_summary['rf_f1_mean']:.3f} "
+            f"Win {repeated_summary['rf_f1_win_rate'] * 100:.1f}% | "
+            f"Margin(Acc/F1) >= {RF_ADV_MARGIN_ACC:.2f}/{RF_ADV_MARGIN_F1:.2f}"
+        )
+        fig.text(
+            0.5,
+            0.995,
+            summary_text,
+            ha='center',
+            va='top',
+            fontsize=10,
+            bbox={'facecolor': 'white', 'alpha': 0.8, 'edgecolor': '#cccccc'},
+        )
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
     finalize_plot(PLOT_FILES['dashboard'])
 
 
@@ -272,6 +357,36 @@ def print_detailed_report(results):
     
     print("\n" + "="*70)
     print("END OF REPORT")
+    print("="*70 + "\n")
+
+
+def print_repeated_report(summary):
+    """반복 분할 평가 결과를 출력한다."""
+    print("\n" + "="*70)
+    print(f"REPEATED HOLDOUT REPORT ({summary['runs']} runs)")
+    print("="*70)
+    print(f"  Stratified split 가능 여부: {summary['can_stratify']}")
+
+    print("\n[ACCURACY - mean ± std]")
+    print(f"  KNN          : {summary['knn_acc_mean']:.4f} ± {summary['knn_acc_std']:.4f}")
+    print(f"  RandomForest : {summary['rf_acc_mean']:.4f} ± {summary['rf_acc_std']:.4f}")
+    print(f"  평균 차이(RF-KNN): {summary['acc_diff_mean']:+.4f}")
+    print(f"  RF 승률         : {summary['rf_acc_win_rate'] * 100:.1f}%")
+
+    print("\n[F1 Weighted - mean ± std]")
+    print(f"  KNN          : {summary['knn_f1_mean']:.4f} ± {summary['knn_f1_std']:.4f}")
+    print(f"  RandomForest : {summary['rf_f1_mean']:.4f} ± {summary['rf_f1_std']:.4f}")
+    print(f"  평균 차이(RF-KNN): {summary['f1_diff_mean']:+.4f}")
+    print(f"  RF 승률         : {summary['rf_f1_win_rate'] * 100:.1f}%")
+
+    robust_label = "RF 우세" if summary['rf_better_robust'] else "우세 불확실/비우세"
+    print("\n[판정 기준]")
+    print("  RF가 KNN보다 정확하다고 판단: "
+          "(반복 평균 Accuracy/F1 격차가 각각 margin 이상일 때)")
+    print(f"  margin 조건: Accuracy ≥ {RF_ADV_MARGIN_ACC:.2f}, F1 ≥ {RF_ADV_MARGIN_F1:.2f}")
+    print(f"  평균 우세 여부: {summary['rf_better_mean']}")
+    print(f"  margin 우세 여부: {summary['rf_better_margin']}")
+    print(f"  판정 결과: {robust_label}")
     print("="*70 + "\n")
 
 
@@ -441,10 +556,15 @@ def main():
     
     # 상세 보고서 출력
     print_detailed_report(results)
+
+    # 반복 분할 평가로 안정적인 우세 판정
+    print("[Step 5-1] 반복 분할 평가")
+    repeated_summary = repeated_holdout_comparison(X, y)
+    print_repeated_report(repeated_summary)
     
     # 시각화
     print("[Step 6] 시각화")
-    plot_performance_dashboard(results)
+    plot_performance_dashboard(results, repeated_summary)
     print("  ✓ 시각화 완료")
     
     # 시뮬레이션: 원본 main_.py처럼 이미지 분석 후 모델 적용
