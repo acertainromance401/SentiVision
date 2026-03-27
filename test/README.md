@@ -10,6 +10,7 @@
 2. 입력 이미지에서 현저성(saliency) 영역을 추출합니다.
 3. KMeans로 주요 색상 3개를 뽑아 감정을 예측합니다.
 4. 사용자 피드백을 받아 CSV 데이터셋을 확장할 수 있습니다.
+5. 별도 비교 스크립트에서 KNN vs RandomForest 성능을 비교합니다.
 
 ## 현재 폴더 구조
 
@@ -25,10 +26,11 @@
 	├── color_emotion_labeled_updated.csv
 	├── colorassociations_warmth - colorwarmth.csv
 	├── main_.py
+	├── run_all_analysis.py
+	├── test_model_comparison.py
 	└── outputs
-		├── dominant_color_emotions.png
-		├── rgb_3d_distribution.png
-		└── saliency_maps.png
+		├── main_YYYYMMDD_HHMMSS_*.png
+		└── comparison_YYYYMMDD_HHMMSS_*.png
 ```
 
 ## 요구 사항
@@ -60,6 +62,18 @@ pip install pandas matplotlib opencv-python scikit-learn numpy
 
 ```bash
 python test/main_.py
+```
+
+모델 비교 실행:
+
+```bash
+python test/test_model_comparison.py
+```
+
+메인 + 비교 일괄 실행:
+
+```bash
+python test/run_all_analysis.py
 ```
 
 실행 중 입력:
@@ -101,14 +115,30 @@ python test/main_.py
 9. 사용자 피드백(정답 감정) 수집 (`main_.py` 269~292행)
 10. 신규 라벨을 CSV에 반영 (`main_.py` 294~295행)
 
+## 코드 분석 (test_model_comparison.py)
+
+주요 기능:
+- Train/Test 분리 및 교차검증 기반 KNN, RandomForest 성능 비교
+- Accuracy, F1, Confusion Matrix 대시보드 생성
+- 동일 입력 이미지에 대해 대표 색상별 KNN/RF 예측 결과 비교
+
+주요 출력:
+- `comparison_YYYYMMDD_HHMMSS_performance_dashboard.png`
+- `comparison_YYYYMMDD_HHMMSS_knn_rf_color_pair.png`
+
+보조 설정:
+- `SAVE_EXTRA_DEBUG_PLOTS=False` 기본값으로 디버그 플롯 과다 생성을 방지
+
 ### 입력/출력 파일 정리
 
 - 입력 데이터: `test/color_emotion_labeled_updated.csv`
 - 입력 이미지: 실행 중 사용자가 입력한 파일 경로
 - 출력 이미지:
-	- `test/outputs/rgb_3d_distribution.png`
-	- `test/outputs/saliency_maps.png`
-	- `test/outputs/dominant_color_emotions.png`
+	- `test/outputs/main_YYYYMMDD_HHMMSS_rgb_3d_distribution.png`
+	- `test/outputs/main_YYYYMMDD_HHMMSS_saliency_maps.png`
+	- `test/outputs/main_YYYYMMDD_HHMMSS_dominant_color_emotions.png`
+	- `test/outputs/comparison_YYYYMMDD_HHMMSS_performance_dashboard.png`
+	- `test/outputs/comparison_YYYYMMDD_HHMMSS_knn_rf_color_pair.png`
 - 피드백 반영 대상: `test/color_emotion_labeled_updated.csv`
 
 ### 예외/실패 처리
@@ -127,9 +157,11 @@ python test/main_.py
 
 아래 시각화 결과가 생성/갱신됩니다.
 
-- test/outputs/rgb_3d_distribution.png
-- test/outputs/saliency_maps.png
-- test/outputs/dominant_color_emotions.png
+- test/outputs/main_YYYYMMDD_HHMMSS_rgb_3d_distribution.png
+- test/outputs/main_YYYYMMDD_HHMMSS_saliency_maps.png
+- test/outputs/main_YYYYMMDD_HHMMSS_dominant_color_emotions.png
+- test/outputs/comparison_YYYYMMDD_HHMMSS_performance_dashboard.png
+- test/outputs/comparison_YYYYMMDD_HHMMSS_knn_rf_color_pair.png
 
 또한 사용자 피드백이 있을 경우 데이터셋 파일이 갱신됩니다.
 
