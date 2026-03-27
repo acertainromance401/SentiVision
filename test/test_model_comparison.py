@@ -27,17 +27,57 @@ import os
 import warnings
 from datetime import datetime
 from pathlib import Path
+import json
+import shutil
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(BASE_DIR, 'color_emotion_labeled_updated.csv')
 OUTPUT_DIR = os.path.join(BASE_DIR, 'outputs')
+DATASET_VERSIONS_DIR = os.path.join(BASE_DIR, 'dataset_versions')
+FIXED_VALIDATION_PATH = os.path.join(BASE_DIR, 'fixed_validation_indices.json')
+UPDATE_HISTORY_PATH = os.path.join(BASE_DIR, 'model_update_history.csv')
 RUN_TAG = datetime.now().strftime('%Y%m%d_%H%M%S')
 OUTPUT_PREFIX = f'comparison_{RUN_TAG}'
 SAVE_EXTRA_DEBUG_PLOTS = False  # True면 RGB 3D, Saliency 디버그 이미지를 추가 저장
 REPEATED_EVAL_RUNS = 30  # 단일 분할 편차를 줄이기 위한 반복 평가 횟수
 RF_ADV_MARGIN_ACC = 0.03  # RF 우세 판정용 최소 Accuracy 평균 격차
 RF_ADV_MARGIN_F1 = 0.03   # RF 우세 판정용 최소 F1 평균 격차
+
+LABEL_GROUPS = {
+    '활력/행동': [
+        'ALERTNESS', 'COURAGE', 'DYNAMIC', 'ENERGY', 'EXCITEMENT', 'HAPPINESS',
+        'INTENSITY', 'LIVELY', 'OPTIMISM', 'PASSION', 'STRENGTH', 'URGENCY',
+        'WARMTH',
+    ],
+    '안정/회복': [
+        'BALANCE', 'CALMNESS', 'COMFORT', 'CONNECTION', 'DURABILITY', 'FREEDOM',
+        'FRESHNESS', 'GROWTH', 'HARMONY', 'HEALING', 'HOPE', 'HONESTY',
+        'PEACE', 'RENEWAL', 'SECURITY', 'STABILITY', 'STILLNESS', 'TRANQUILITY',
+        'TRUST',
+    ],
+    '관계/애정': [
+        'COOPERATION', 'FEMININE', 'FRIENDSHIP', 'LOVE', 'ROMANCE',
+    ],
+    '권위/가치': [
+        'ABUNDANCE', 'AUTHORITY', 'CONFIDENCE', 'DEPTH', 'ELEGANCE', 'IDEALISTIC',
+        'PRACTICAL', 'REALITY', 'ROYALTY', 'SOPHISTICATION', 'WEALTH',
+    ],
+    '창의/의미': [
+        'BEAUTY', 'CREATIVITY', 'IDEALISTIC', 'MYSTERY', 'SPIRITUAL',
+    ],
+    '자연/중립': [
+        'GROUNDED', 'IMMATURITY', 'MILITARY', 'NATURE', 'RESERVED',
+    ],
+    '긴장/위협': [
+        'ANXIETY', 'CAUTION', 'CHAOS', 'COWARDICE', 'EGOTISM', 'FEAR', 'PROTEST',
+        'SIN', 'TENSION', 'VULGARITY',
+    ],
+    '어둠/상실': [
+        'ALIENATION', 'COLDNESS', 'DARKNESS', 'DEATH', 'DEPRESSION', 'DESPAIR',
+        'DULLNESS', 'FATIGUE', 'ISOLATION', 'LONELINESS', 'LOSS', 'SAD',
+    ],
+}
 
 PLOT_FILES = {
     'dashboard': f'{OUTPUT_PREFIX}_performance_dashboard.png',
@@ -82,6 +122,155 @@ def cleanup_old_comparison_outputs():
 
     if removed > 0:
         print(f"✓ 구버전 comparison 이미지 정리: {removed}개 삭제")
+
+
+def load_or_create_fixed_validation_indices(color_map, emotion_series, path=FIXED_VALIDATION_PATH):
+    """고정 검증셋 인덱스를 로드하거나 최초 1회 생성한다."""
+    if os.path.exists(path):
+        with open(path, 'r', encoding='utf-8') as f:
+            payload = json.load(f)
+        indices = payload.get('indices', [])
+        if indices and max(indices) < len(color_map):
+            print(f"✓ 고정 검증셋 로드: {len(indices)} samples")
+            return indices
+        print("! 고정 검증셋 인덱스가 현재 데이터셋 길이와 맞지 않아 재생성합니다.")
+
+    all_indices = np.arange(len(color_map))
+    class_counts = emotion_series.value_counts()
+    stratify_target = emotion_series if class_counts.min() >= 2 else None
+
+    _, validation_indices = train_test_split(
+        all_indices,
+        test_size=0.2,
+        random_state=42,
+        stratify=stratify_target,
+    )
+    validation_indices = sorted(validation_indices.tolist())
+
+    payload = {
+        'created_at': datetime.now().isoformat(),
+        'dataset_rows_at_creation': len(color_map),
+        'indices': validation_indices,
+    }
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+
+    print(f"✓ 고정 검증셋 생성: {len(validation_indices)} samples")
+    return validation_indices
+
+
+def split_with_fixed_validation(X, y, validation_indices):
+    """고정 검증셋 인덱스를 사용해 train/validation을 분리한다."""
+    validation_index_set = set(validation_indices)
+    train_mask = [idx not in validation_index_set for idx in range(len(X))]
+    val_mask = [idx in validation_index_set for idx in range(len(X))]
+
+    X_train = X.iloc[train_mask].reset_index(drop=True)
+    y_train = y.iloc[train_mask].reset_index(drop=True)
+    X_val = X.iloc[val_mask].reset_index(drop=True)
+    y_val = y.iloc[val_mask].reset_index(drop=True)
+    return X_train, X_val, y_train, y_val
+
+
+def build_grouped_label_menu(labels):
+    """감정 라벨을 감정군별로 묶고 선택 순서를 만든다."""
+    unique_labels = []
+    seen = set()
+    for label in labels:
+        if label not in seen:
+            unique_labels.append(label)
+            seen.add(label)
+
+    grouped = []
+    assigned = set()
+    for group_name, group_labels in LABEL_GROUPS.items():
+        current_labels = [label for label in group_labels if label in seen and label not in assigned]
+        if current_labels:
+            grouped.append((group_name, current_labels))
+            assigned.update(current_labels)
+
+    remaining = sorted([label for label in unique_labels if label not in assigned])
+    if remaining:
+        grouped.append(('기타', remaining))
+
+    ordered_labels = []
+    for _, group_labels in grouped:
+        ordered_labels.extend(group_labels)
+
+    return ordered_labels, grouped
+
+
+def render_label_menu(labels, columns=3):
+    """선택 가능한 감정 라벨 목록을 감정군별 번호 목록으로 출력한다."""
+    print("\n[선택 가능한 감정 라벨 목록]")
+    ordered_labels, grouped = build_grouped_label_menu(labels)
+    label_to_index = {label: idx for idx, label in enumerate(ordered_labels, start=1)}
+
+    for group_name, group_labels in grouped:
+        print(f"\n- {group_name}")
+        rows = [f"{label_to_index[label]:>2}. {label:<15}" for label in group_labels]
+        for start in range(0, len(rows), columns):
+            print("  ".join(rows[start:start + columns]))
+
+
+def prompt_for_label_choice(labels, default_label):
+    """라벨 번호 선택형 입력을 제공한다."""
+    ordered_labels, _ = build_grouped_label_menu(labels)
+    while True:
+        raw = input("  최종 감정 번호 입력 (Enter=RF 사용, ?=목록 다시 보기): ").strip()
+        if raw == "":
+            return default_label, 'rf_default'
+        if raw == '?':
+            render_label_menu(labels)
+            continue
+        if raw.isdigit():
+            selected_index = int(raw)
+            if 1 <= selected_index <= len(ordered_labels):
+                return ordered_labels[selected_index - 1], 'user_select'
+        print("  올바른 번호를 입력하세요.")
+
+
+def backup_dataset_version(data_path):
+    """CSV 수정 전 버전 백업을 저장한다."""
+    os.makedirs(DATASET_VERSIONS_DIR, exist_ok=True)
+    backup_name = f"color_emotion_labeled_updated_{RUN_TAG}.csv"
+    backup_path = os.path.join(DATASET_VERSIONS_DIR, backup_name)
+    shutil.copy2(data_path, backup_path)
+    print(f"✓ CSV 백업 저장: {backup_path}")
+    return backup_path
+
+
+def log_update_history(results, repeated_summary, stats, rows_before, rows_after, backup_path):
+    """업데이트 전후 성능 및 데이터 변경 이력을 CSV로 남긴다."""
+    history_row = pd.DataFrame([{
+        'timestamp': datetime.now().isoformat(),
+        'run_tag': RUN_TAG,
+        'backup_path': backup_path,
+        'rows_before': rows_before,
+        'rows_after': rows_after,
+        'appended_rows': stats['appended'],
+        'duplicates_skipped': stats['duplicates_skipped'],
+        'conflicts_skipped': stats['conflicts_skipped'],
+        'conflicts_appended': stats['conflicts_appended'],
+        'knn_val_acc': results['knn_acc'],
+        'rf_val_acc': results['rf_acc'],
+        'knn_val_f1': results['knn_f1'],
+        'rf_val_f1': results['rf_f1'],
+        'repeated_knn_acc_mean': repeated_summary['knn_acc_mean'],
+        'repeated_rf_acc_mean': repeated_summary['rf_acc_mean'],
+        'repeated_knn_f1_mean': repeated_summary['knn_f1_mean'],
+        'repeated_rf_f1_mean': repeated_summary['rf_f1_mean'],
+        'rf_better_margin': repeated_summary['rf_better_margin'],
+    }])
+
+    if os.path.exists(UPDATE_HISTORY_PATH):
+        old_history = pd.read_csv(UPDATE_HISTORY_PATH)
+        history_df = pd.concat([old_history, history_row], ignore_index=True)
+    else:
+        history_df = history_row
+
+    history_df.to_csv(UPDATE_HISTORY_PATH, index=False)
+    print(f"✓ 업데이트 이력 저장: {UPDATE_HISTORY_PATH}")
 
 
 TYPO_LABEL_MAP = {
@@ -469,6 +658,126 @@ def plot_knn_rf_color_pair(dominant_colors, knn, rf):
     finalize_plot(PLOT_FILES['prediction_pair'])
 
 
+def collect_user_emotion_feedback(dominant_colors, knn, rf, data_path, labels, results, repeated_summary):
+    """사용자 최종 감정을 선택형으로 받아 데이터셋에 규칙적으로 반영한다."""
+    print("\n[Step 8] 사용자 감정 입력(선택)")
+    print("- Enter: RF 예측값 사용")
+    print("- 번호 입력: 기존 라벨 목록 중 하나 선택")
+    render_label_menu(labels)
+
+    feedback_rows = []
+    for i, (r, g, b) in enumerate(dominant_colors):
+        knn_emotion = emotion_from_rgb_knn(knn, r, g, b)
+        rf_emotion = emotion_from_rgb_rf(rf, r, g, b)
+
+        print(f"\n[{i+1}] RGB({int(r)}, {int(g)}, {int(b)})")
+        print(f"  KNN: {knn_emotion}")
+        print(f"  RF : {rf_emotion}")
+
+        try:
+            final_emotion, input_source = prompt_for_label_choice(labels, rf_emotion)
+        except (KeyboardInterrupt, EOFError):
+            print("\n입력이 중단되어 사용자 감정 입력 단계를 종료합니다.")
+            break
+
+        feedback_rows.append({
+            'emotion': final_emotion,
+            'R': int(r),
+            'G': int(g),
+            'B': int(b),
+            'color_name': np.nan,
+            'color_label': np.nan,
+            'input_source': input_source,
+            'knn_emotion': knn_emotion,
+            'rf_emotion': rf_emotion,
+        })
+
+    if not feedback_rows:
+        print("사용자 피드백이 없어 저장하지 않습니다.")
+        return
+
+    existing_df = pd.read_csv(data_path)
+    rows_before = len(existing_df)
+
+    stats = {
+        'appended': 0,
+        'duplicates_skipped': 0,
+        'conflicts_skipped': 0,
+        'conflicts_appended': 0,
+    }
+
+    accepted_rows = []
+    working_df = existing_df.copy()
+
+    for row in feedback_rows:
+        exact_duplicate = (
+            (working_df['emotion'] == row['emotion'])
+            & (working_df['R'] == row['R'])
+            & (working_df['G'] == row['G'])
+            & (working_df['B'] == row['B'])
+        )
+        if exact_duplicate.any():
+            stats['duplicates_skipped'] += 1
+            print(f"- 중복 스킵: {row['emotion']} / RGB({row['R']}, {row['G']}, {row['B']})")
+            continue
+
+        conflict_mask = (
+            (working_df['R'] == row['R'])
+            & (working_df['G'] == row['G'])
+            & (working_df['B'] == row['B'])
+            & (working_df['emotion'] != row['emotion'])
+        )
+        conflict_labels = sorted(working_df.loc[conflict_mask, 'emotion'].dropna().astype(str).unique())
+        if conflict_labels:
+            print(
+                f"- 충돌 감지: RGB({row['R']}, {row['G']}, {row['B']})에 기존 감정 {conflict_labels} 존재"
+            )
+            try:
+                conflict_input = input("  이 감정을 추가로 저장할까요? (y/N): ").strip().lower()
+            except (KeyboardInterrupt, EOFError):
+                conflict_input = 'n'
+
+            if conflict_input not in {'y', 'yes'}:
+                stats['conflicts_skipped'] += 1
+                print("  → 충돌 항목 저장 안 함")
+                continue
+
+            stats['conflicts_appended'] += 1
+
+        accepted_rows.append(row)
+        working_df = pd.concat([
+            working_df,
+            pd.DataFrame([{
+                'emotion': row['emotion'],
+                'R': row['R'],
+                'G': row['G'],
+                'B': row['B'],
+                'color_name': np.nan,
+                'color_label': np.nan,
+            }])
+        ], ignore_index=True)
+        stats['appended'] += 1
+
+    if not accepted_rows:
+        print("저장할 신규 데이터가 없습니다.")
+        return
+
+    backup_path = backup_dataset_version(data_path)
+    new_feedback_df = pd.DataFrame(accepted_rows)
+    new_feedback_df = new_feedback_df.drop(columns=['input_source', 'knn_emotion', 'rf_emotion'])
+
+    # 기존 CSV 스키마 순서에 맞춰 신규 데이터를 정렬한다.
+    for col in existing_df.columns:
+        if col not in new_feedback_df.columns:
+            new_feedback_df[col] = np.nan
+    new_feedback_df = new_feedback_df[existing_df.columns]
+
+    merged_df = pd.concat([existing_df, new_feedback_df], ignore_index=True)
+    merged_df.to_csv(data_path, index=False)
+    print(f"✓ 사용자 감정 피드백 {len(new_feedback_df)}건 추가 저장: {data_path}")
+    log_update_history(results, repeated_summary, stats, rows_before, len(merged_df), backup_path)
+
+
 def main():
     """모델 비교 파이프라인 실행."""
     setup_plot_style()
@@ -506,27 +815,12 @@ def main():
         print("\n[Step 1-1] RGB 3D 분포 시각화 저장")
         plot_rgb_3d_distribution(color_map)
     
-    # Train/Test 분리 (8:2 비율, stratified)
-    print("\n[Step 2] Train/Test 분리 (80/20)")
-    class_counts = y.value_counts()
-    can_stratify = class_counts.min() >= 2
-
-    if can_stratify:
-        print("  - Stratified split: 사용")
-        stratify_target = y
-    else:
-        print("  - Stratified split: 생략 (일부 클래스 샘플 수 < 2)")
-        stratify_target = None
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        test_size=0.2,
-        random_state=42,
-        stratify=stratify_target,
-    )
-    print(f"  Train set: {len(X_train)} samples")
-    print(f"  Test set : {len(X_test)} samples")
+    # 고정 검증셋 분리
+    print("\n[Step 2] 고정 검증셋 분리")
+    validation_indices = load_or_create_fixed_validation_indices(color_map, y)
+    X_train, X_test, y_train, y_test = split_with_fixed_validation(X, y, validation_indices)
+    print(f"  Train set      : {len(X_train)} samples")
+    print(f"  Validation set : {len(X_test)} samples")
     
     # 모델 학습
     print("\n[Step 3] 모델 학습")
@@ -559,7 +853,7 @@ def main():
 
     # 반복 분할 평가로 안정적인 우세 판정
     print("[Step 5-1] 반복 분할 평가")
-    repeated_summary = repeated_holdout_comparison(X, y)
+    repeated_summary = repeated_holdout_comparison(X_train, y_train)
     print_repeated_report(repeated_summary)
     
     # 시각화
@@ -627,6 +921,10 @@ def main():
 
     # KNN/RF를 좌우 서브플롯 한 쌍으로 저장
     plot_knn_rf_color_pair(dominant_colors, knn, rf)
+
+    # 사용자 최종 감정 입력(선택)
+    label_choices = sorted(y.dropna().astype(str).unique())
+    collect_user_emotion_feedback(dominant_colors, knn, rf, DATA_PATH, label_choices, results, repeated_summary)
 
 
 if __name__ == '__main__':

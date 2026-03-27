@@ -76,18 +76,125 @@ python test/test_model_comparison.py
 python test/run_all_analysis.py
 ```
 
-실행 중 입력:
+### 비교 스크립트 사용 흐름
 
-1. 분석할 이미지 경로 입력
-2. 예측 감정 피드백 입력
-   - Enter/yes/y/예: 기존 예측 유지
-   - 다른 텍스트 입력: 해당 감정으로 CSV에 반영
+`test/test_model_comparison.py` 실행 시 실제 흐름은 아래와 같습니다.
 
-예시:
+1. `test/color_emotion_labeled_updated.csv` 로드
+2. 고정 검증셋 파일(`test/fixed_validation_indices.json`) 로드 또는 최초 1회 생성
+3. 학습셋으로 KNN, RandomForest 재학습
+4. 고정 검증셋 기준 Accuracy, F1, Confusion Matrix 평가
+5. 반복 분할 평가로 RF 우세 여부를 추가 판정
+6. 이미지 경로 입력
+7. 이미지의 salient 영역에서 대표 색상 3개 추출
+8. 각 색상에 대해 KNN, RF 감정 예측 비교
+9. 사용자가 최종 감정을 번호 선택으로 입력
+10. 중복/충돌 검사 후 `test/color_emotion_labeled_updated.csv` 반영
+11. 수정 전 CSV 백업 및 업데이트 이력 저장
+
+### 실제 입력 예시
 
 ```text
-분석할 이미지 파일 경로를 입력하세요: test/C500x500.jpeg
+$ python test/test_model_comparison.py
+
+[Step 1] CSV 로드 및 데이터 준비
+[Step 2] 고정 검증셋 분리
+[Step 3] 모델 학습
+[Step 4] 성능 평가 (테스트 셋)
+[Step 5] 교차검증
+[Step 5-1] 반복 분할 평가
+[Step 6] 시각화
+[Step 7] 실시간 이미지 분석 (선택)
+분석할 이미지 파일 경로 입력 (또는 Enter 스킵): test/C500x500.jpeg
+
+[결과] 추출 색상 감정 예측 (KNN vs RandomForest)
+----------------------------------------------------------------------
+Color 1 RGB(30, 38, 56)
+	KNN          : DARKNESS
+	RandomForest : DESPAIR ✗
+
+Color 2 RGB(142, 157, 154)
+	KNN          : BALANCE
+	RandomForest : RESERVED ✗
+
+Color 3 RGB(71, 92, 126)
+	KNN          : DEPRESSION
+	RandomForest : DEPRESSION ✓
+
+[Step 8] 사용자 감정 입력(선택)
+- Enter: RF 예측값 사용
+- 번호 입력: 기존 라벨 목록 중 하나 선택
+
+[선택 가능한 감정 라벨 목록]
+- 활력/행동
+ 1. ALERTNESS   2. COURAGE   3. DYNAMIC
+
+- 안정/회복
+14. BALANCE    15. CALMNESS  16. COMFORT
+
+...
+
+[1] RGB(30, 38, 56)
+	KNN: DARKNESS
+	RF : DESPAIR
+	최종 감정 번호 입력 (Enter=RF 사용, ?=목록 다시 보기): 15
+
+[2] RGB(142, 157, 154)
+	KNN: BALANCE
+	RF : RESERVED
+	최종 감정 번호 입력 (Enter=RF 사용, ?=목록 다시 보기):
+
+[3] RGB(71, 92, 126)
+	KNN: DEPRESSION
+	RF : DEPRESSION
+	최종 감정 번호 입력 (Enter=RF 사용, ?=목록 다시 보기): 51
 ```
+
+위 예시는 다음 의미입니다.
+
+- 첫 번째 색상: 사용자가 `CALMNESS`를 직접 선택
+- 두 번째 색상: Enter를 눌러 RF 예측값 `RESERVED` 사용
+- 세 번째 색상: 사용자가 `MYSTERY`를 직접 선택
+
+### 사용자 입력 규칙
+
+1. Enter
+	 - RF 예측값을 그대로 최종 감정으로 사용
+2. 숫자 입력
+	 - 감정군별 메뉴에서 해당 번호의 감정을 선택
+3. `?`
+	 - 감정군별 라벨 목록을 다시 출력
+
+### CSV 반영 규칙
+
+사용자 입력 결과는 `test/color_emotion_labeled_updated.csv`에 직접 반영됩니다.
+
+반영 전 검사:
+
+1. 완전 중복
+	 - 같은 `RGB + emotion` 이 이미 있으면 저장하지 않음
+2. 충돌 항목
+	 - 같은 RGB에 다른 emotion 이 이미 있으면 추가 저장 여부를 다시 확인
+
+### 버전 관리 및 이력
+
+CSV 수정 전:
+
+- `test/dataset_versions/color_emotion_labeled_updated_YYYYMMDD_HHMMSS.csv` 백업 생성
+
+CSV 수정 후:
+
+- `test/model_update_history.csv` 에 변경 이력 누적
+
+기록 항목:
+
+- 수정 전후 행 수
+- 신규 추가 수
+- 중복 스킵 수
+- 충돌 스킵/추가 수
+- KNN/RF 검증 성능
+- 반복 평가 평균 성능
+- RF margin 우세 여부
 
 ## 코드 분석 (main_.py)
 
@@ -118,13 +225,17 @@ python test/run_all_analysis.py
 ## 코드 분석 (test_model_comparison.py)
 
 주요 기능:
-- Train/Test 분리 및 교차검증 기반 KNN, RandomForest 성능 비교
+- 고정 검증셋 기반 KNN, RandomForest 성능 비교
 - Accuracy, F1, Confusion Matrix 대시보드 생성
 - 동일 입력 이미지에 대해 대표 색상별 KNN/RF 예측 결과 비교
+- 사용자 최종 감정 선택형 입력 후 학습 CSV 직접 반영
+- 데이터셋 백업 및 업데이트 이력 관리
 
 주요 출력:
 - `comparison_YYYYMMDD_HHMMSS_performance_dashboard.png`
 - `comparison_YYYYMMDD_HHMMSS_knn_rf_color_pair.png`
+- `test/dataset_versions/color_emotion_labeled_updated_YYYYMMDD_HHMMSS.csv`
+- `test/model_update_history.csv`
 
 보조 설정:
 - `SAVE_EXTRA_DEBUG_PLOTS=False` 기본값으로 디버그 플롯 과다 생성을 방지
@@ -133,6 +244,7 @@ python test/run_all_analysis.py
 
 - 입력 데이터: `test/color_emotion_labeled_updated.csv`
 - 입력 이미지: 실행 중 사용자가 입력한 파일 경로
+- 고정 검증셋: `test/fixed_validation_indices.json`
 - 출력 이미지:
 	- `test/outputs/main_YYYYMMDD_HHMMSS_rgb_3d_distribution.png`
 	- `test/outputs/main_YYYYMMDD_HHMMSS_saliency_maps.png`
@@ -140,6 +252,8 @@ python test/run_all_analysis.py
 	- `test/outputs/comparison_YYYYMMDD_HHMMSS_performance_dashboard.png`
 	- `test/outputs/comparison_YYYYMMDD_HHMMSS_knn_rf_color_pair.png`
 - 피드백 반영 대상: `test/color_emotion_labeled_updated.csv`
+- CSV 백업: `test/dataset_versions/`
+- 업데이트 이력: `test/model_update_history.csv`
 
 ### 예외/실패 처리
 
@@ -149,9 +263,11 @@ python test/run_all_analysis.py
 
 ### 현재 코드 해석 시 주의점
 
-- 출력되는 정확도는 훈련 데이터 기준 정확도이므로 일반화 성능 지표와 다를 수 있음
+- 비교 스크립트의 핵심 평가는 고정 검증셋 기준으로 수행됨
+- 반복 분할 평가는 학습셋 내부에서만 수행되어 검증셋 누수를 방지함
 - 현저성 임계값(현재 10)과 KMeans 클러스터 수(기본 3)는 결과에 큰 영향을 줌
 - 사용자 피드백 누적에 따라 동일 RGB라도 라벨 분포가 달라질 수 있음
+- 같은 RGB에 다른 감정을 추가하는 경우 충돌 데이터가 되므로 사용자 확인 절차가 있음
 
 ## 출력 결과
 
