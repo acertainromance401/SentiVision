@@ -11,6 +11,29 @@
 3. KMeans로 주요 색상 3개를 뽑아 감정을 예측합니다.
 4. 사용자 피드백을 받아 CSV 데이터셋을 확장할 수 있습니다.
 
+## 아이디어 기반 배경 (사용자 원안 반영)
+
+이 base_model은 사용자 원안 아이디어의 핵심 가설을 기술 검증용으로 고정한 기준선(baseline)입니다.
+
+핵심 의도
+- 창작 흐름을 끊는 텍스트/음성 입력 대신, 그림의 색감만으로 감정 상태를 해석한다.
+- 예측 결과를 사용자 피드백으로 정정해 데이터셋을 보정하고, 다음 분석 품질을 점진적으로 높인다.
+
+base_model에서 검증하는 항목
+- 색상 기반 감정 추론 파이프라인: 현저성 추출 -> KMeans 대표 색상 추출 -> KNN 감정 매핑
+- 사용자 피드백 반영 루프: 예측 감정 유지/수정 입력 -> CSV 데이터셋 업데이트
+- 시각화 산출물 생성: RGB 분포, saliency map, 대표 색상-감정 결과
+
+역할 구분
+- base_model: 원안 아이디어의 최소 실행 가능 구조를 보존하는 기준선
+- test: 개선된 검증 파이프라인과 모델 비교 실험 영역
+
+관련 기획 문서
+- Project_Descriptions/reference/user-idea-report-1940200.pdf
+- Project_Descriptions/Project_Description.md
+- Project_Descriptions/PRD_SentiVision.md
+- Project_Descriptions/Wireframe_SentiVision.md
+
 ## 현재 폴더 구조
 
 ```text

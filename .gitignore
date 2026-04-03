@@ -2,3 +2,12 @@
 SentiVision/
 SntiVision/
 .DS_Store
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Python cache artifacts
+__pycache__/
+*.pyc
