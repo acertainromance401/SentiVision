@@ -163,8 +163,9 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-  U[드로잉 팔레트] --> A[POST /analyze]
-  A --> R[결과 반환]
+  U[캔버스 이미지] --> A[POST /analyze]
+  A --> P[현저성 추출 -> KMeans -> KNN]
+  P --> R[결과 반환]
   R --> F[POST /feedback]
   F --> D[CSV 반영]
   D --> C[CLI 검증]
