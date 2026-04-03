@@ -6,6 +6,10 @@
 ## 1. 제품 개요
 SentiVision은 사용자가 캔버스에 그린 그림의 색감 정보를 분석하여 감정 상태를 추정하고, 사용자 피드백을 통해 모델을 점진적으로 개선하는 감성 컴퓨팅 제품이다.
 
+### 1.1 홈 화면 시안
+
+![SentiVision Home Screen](../docs/images/sentivision-home-screen.png)
+
 ## 2. 문제 정의
 SentiVision이 해결하려는 핵심 문제는 "사용자가 창작 과정에서 느끼는 감정 상태를 부담 없이 기록하고 해석할 수 있는 도구가 부족하다"는 점이다.
 
