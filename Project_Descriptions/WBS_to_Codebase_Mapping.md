@@ -10,7 +10,7 @@
 | WBS 항목 | 산출물 | 현재 코드 위치 | 현재 상태 | 필요 작업 |
 |---------|--------|-------------|---------|---------|
 | **1. 프로젝트 관리** | 주간 계획/회고, 리스크 로그 | 없음 | 미시작 | GitHub Projects 또는 Wiki 설정 |
-| **2. 요구사항/문서 정합화** | `Project_Descriptions` 세트 | `Project_Descriptions/*.md` | 완료 (2026-03-25) | 문제 정의 정렬 상태 주간 점검 |
+| **2. 요구사항/문서 정합화** | `Project_Descriptions` 세트 (PRD/UserJourney/Wireframe/ScreenFlow) | `Project_Descriptions/*.md` | 완료 (2026-03-25) | 문제 정의 정렬 상태 주간 점검 |
 | **3. 캔버스 UX 설계** | 와이어프레임, 화면 흐름도 | `Project_Descriptions/Wireframe_SentiVision.md` | 완료 (설계 단계) | SwiftUI 프로토타입 구현 필요 |
 | **4. API 설계/구현** | API 명세, FastAPI 코드 | 설계만 완료 / 구현 미작 | 설계 단계 | FastAPI 프로젝트 생성 + 4.1~4.4 구현 |
 | **5. 분석 엔진/데이터 파이프라인** | KNN/KMeans 로직, 데이터 품질 리포트 | `test/main_.py`, `test/test_model_comparison.py` | 진행 중 (CLI) | 엔진 모듈화 + API 연동 + 학습 파이프라인 |
@@ -49,7 +49,7 @@
 | 엔드포인트 | 메서드 | 입력 | 출력 | 현재 상태 | 매핑소스 |
 |---------|--------|------|------|---------|---------|
 | `/health` | GET | 없음 | `{"status": "ok"}` | 미작 | 기본 헬스체크 |
-| `/analyze` | POST | `palette: List[RGB], weights?: List[float]` | `predicted_emotion, confidence_scores, palette_hex` | 미작 | WBS 4.1, FR-2, `emotion_from_rgb()` 활용 |
+| `/analyze` | POST | `image`(필수), `weights?`(선택) | `predicted_emotion, confidence_scores, representative_palette` | 미작 | WBS 4.1, FR-2, FR-5 (현저성->KMeans->KNN) |
 | `/feedback` | POST | `predicted_emotion, corrected_emotion, palette, note?` | `{"feedback_id": "uuid", "status": "saved"}` | 미작 | WBS 4.2, FR-3, CSV 쓰기 로직 |
 
 **구현 계획**:
@@ -68,7 +68,7 @@
 | 화면 | 정의 | 필요 SwiftUI 컴포넌트 | 의존성 | 상태 |
 |------|------|---------|--------|------|
 | HomePage | 최근 감정 + 최근 7일 분석수 + "새 그림 시작" | List, Card, Button | WBS 6 (히스토리 데이터) | 설계 완료 |
-| CanvasView | 그리기 영역 + 팔레트 하단 표시 | Canvas, @State palette | iOS 14+ Canvas API | 설계 완료 |
+| CanvasView | 그리기 영역 + 다중 색상 선택(색상휠/HEX/RGB/스포이트) + 팔레트 하단 표시 | Canvas, @State palette, ColorPicker, TextField, Slider | iOS 14+ Canvas API | 설계 완료 |
 | AnalysisLoading | 단계형 로딩 메시지 | ProgressView, Text | WBS 5 (API 응답) | 설계 완료 |
 | ResultCard | 감정 + 점수 + 색상 스와치 | VStack, Rectangle (color) | WBS 5 (API 응답) | 설계 완료 |
 | FeedbackForm | 감정 선택 + 메모 입력 | Picker, TextField, Button | WBS 6 (저장) | 설계 완료 |
