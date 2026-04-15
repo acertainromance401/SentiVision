@@ -1,0 +1,43 @@
+name: Jekyll Build and Deploy Branch
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      deploy_branch:
+        description: '배포 대상 브랜치명 (없으면 gh-pages)'
+        required: false
+        default: 'gh-pages'
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve deploy branch
+        id: deploy-branch
+        run: echo "name=${{ github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_branch || 'gh-pages' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build with Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+
+      - name: Deploy _site to branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          publish_branch: ${{ steps.deploy-branch.outputs.name }}
+          force_orphan: true
