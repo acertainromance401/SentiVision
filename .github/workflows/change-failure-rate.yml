@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "Measure CFR (proxy: incident issues vs pushes to main)"
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const now = new Date();
