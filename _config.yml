@@ -1,0 +1,7 @@
+title: SentiVision AI Portfolio
+description: 색감 기반 감정 분석 프로젝트 SentiVision의 AI 포트폴리오
+theme: minima
+lang: ko-KR
+markdown: kramdown
+plugins:
+  - jekyll-feed
