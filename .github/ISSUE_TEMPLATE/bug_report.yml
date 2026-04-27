@@ -1,0 +1,73 @@
+name: Bug Report
+description: 버그를 발견했을 때 사용하는 템플릿
+title: "[Bug] "
+labels: ["bug", "priority:medium"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        버그 리포트를 작성해주셔서 감사합니다. 아래 항목을 최대한 상세히 작성해주세요.
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: 버그 설명
+      description: 어떤 버그인지 명확하게 설명해주세요.
+      placeholder: "예: 10MB 이상 이미지 업로드 시 500 오류 반환"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: 재현 방법
+      description: 버그를 재현하는 단계를 순서대로 작성해주세요.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: 예상 동작
+      description: 어떻게 동작해야 하는지 설명해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: 실제 동작
+      description: 실제로 어떻게 동작하는지 설명해주세요.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 우선순위
+      options:
+        - "High - 즉시 수정 필요"
+        - "Medium - 다음 스프린트 내 수정"
+        - "Low - 추후 수정"
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 환경 정보
+      description: OS, Python 버전, 브라우저 등
+      placeholder: |
+        - OS: macOS 15.x
+        - Python: 3.11
+        - Browser: Chrome 130
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 추가 정보
+      description: 스크린샷, 로그, 관련 이슈 등

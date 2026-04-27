@@ -1,0 +1,86 @@
+name: Feature Request
+description: 새 기능 요청 또는 개선 사항을 제안할 때 사용하는 템플릿
+title: "[Feature] "
+labels: ["feature", "priority:medium"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        기능 요청을 작성해주셔서 감사합니다. 구체적인 내용을 작성할수록 빠른 검토가 가능합니다.
+
+  - type: textarea
+    id: feature-summary
+    attributes:
+      label: 기능 개요
+      description: 어떤 기능을 원하는지 한 문장으로 설명해주세요.
+      placeholder: "예: 배치 이미지 분석 기능 추가"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem-statement
+    attributes:
+      label: 해결하려는 문제
+      description: 이 기능이 필요한 이유와 현재 겪고 있는 불편함을 설명해주세요.
+      placeholder: "현재는 이미지를 1장씩만 분석할 수 있어서..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: 제안하는 해결책
+      description: 기능이 어떻게 동작하면 좋을지 설명해주세요.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: 수용 기준 (Acceptance Criteria)
+      description: 이 기능이 완료되었다고 판단하는 조건을 작성해주세요.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: 카테고리
+      options:
+        - "model - ML 모델 관련"
+        - "api - API 관련"
+        - "ui - UI/UX 관련"
+        - "data - 데이터 처리/분석"
+        - "infra - 인프라/DevOps"
+        - "test - 테스트"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 우선순위
+      options:
+        - "High - 핵심 기능"
+        - "Medium - 있으면 좋은 기능"
+        - "Low - 낮은 우선순위"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: sprint
+    attributes:
+      label: 목표 스프린트
+      options:
+        - "Sprint 1 (~ 2026-05-18)"
+        - "Sprint 2 (~ 2026-06-08)"
+        - "Backlog (미정)"
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 추가 정보
+      description: 참고 자료, 관련 이슈, 스크린샷 등
