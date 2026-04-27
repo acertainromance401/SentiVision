@@ -239,3 +239,9 @@ python3 -m pytest test/ --cov=src --cov-report=term-missing
 
 이슈나 질문은 [GitHub Issues](https://github.com/acertainromance401/SentiVision/issues)에 등록해주세요.  
 라벨 `question` 또는 `documentation`을 사용하면 빠른 응답을 받을 수 있습니다.
+
+## 커뮤니티 정책
+
+- 행동강령: `CODE_OF_CONDUCT.md`
+- 라이선스 비교/선정 기준: `docs/oss/license-comparison.md`
+- Inner Source 도입 로드맵: `docs/oss/innersource-roadmap.md`
