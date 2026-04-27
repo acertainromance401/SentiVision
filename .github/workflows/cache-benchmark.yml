@@ -1,0 +1,123 @@
+name: Cache Benchmark Report
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/actions/python-ci-setup/action.yml'
+      - '.github/workflows/reusable-python-quality.yml'
+      - '.github/workflows/cache-benchmark.yml'
+      - 'requirements-ci.txt'
+      - 'tests/test_smoke.py'
+
+permissions:
+  contents: read
+
+jobs:
+  baseline_no_cache:
+    name: Baseline without cache
+    uses: ./.github/workflows/reusable-python-quality.yml
+    with:
+      os: ubuntu-latest
+      python-version: "3.12"
+      use-cache: false
+      requirements-file: requirements-ci.txt
+      run-lint: true
+      run-tests: true
+      artifact-name: benchmark-baseline-no-cache
+    secrets: inherit
+
+  warm_cache:
+    name: Warm pip cache
+    needs: baseline_no_cache
+    uses: ./.github/workflows/reusable-python-quality.yml
+    with:
+      os: ubuntu-latest
+      python-version: "3.12"
+      use-cache: true
+      requirements-file: requirements-ci.txt
+      run-lint: true
+      run-tests: true
+      artifact-name: benchmark-cache-warmup
+    secrets: inherit
+
+  optimized_with_cache:
+    name: Optimized with cache
+    needs: warm_cache
+    uses: ./.github/workflows/reusable-python-quality.yml
+    with:
+      os: ubuntu-latest
+      python-version: "3.12"
+      use-cache: true
+      requirements-file: requirements-ci.txt
+      run-lint: true
+      run-tests: true
+      artifact-name: benchmark-optimized-with-cache
+    secrets: inherit
+
+  compare:
+    name: Compare before and after
+    runs-on: ubuntu-latest
+    needs: [baseline_no_cache, optimized_with_cache]
+
+    steps:
+      - name: Build numeric report
+        id: calc
+        shell: bash
+        run: |
+          base=${{ needs.baseline_no_cache.outputs.elapsed_seconds }}
+          opt=${{ needs.optimized_with_cache.outputs.elapsed_seconds }}
+
+          if [[ -z "$base" || -z "$opt" || "$base" -le 0 ]]; then
+            echo "base=$base" >> "$GITHUB_OUTPUT"
+            echo "opt=$opt" >> "$GITHUB_OUTPUT"
+            echo "improvement=0.00" >> "$GITHUB_OUTPUT"
+            echo "speedup=1.00" >> "$GITHUB_OUTPUT"
+          else
+            improvement=$(python - <<PY
+            b=$base
+            o=$opt
+            print(f"{((b-o)/b)*100:.2f}")
+PY
+)
+            speedup=$(python - <<PY
+            b=$base
+            o=$opt
+            print(f"{b/o:.2f}" if o > 0 else "inf")
+PY
+)
+            echo "base=$base" >> "$GITHUB_OUTPUT"
+            echo "opt=$opt" >> "$GITHUB_OUTPUT"
+            echo "improvement=$improvement" >> "$GITHUB_OUTPUT"
+            echo "speedup=$speedup" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Write optimization report
+        shell: bash
+        run: |
+          cat > cache-optimization-report.md <<EOF
+          # Cache Optimization Report
+
+          - Baseline (no cache): ${{ steps.calc.outputs.base }}s
+          - Optimized (with cache): ${{ steps.calc.outputs.opt }}s
+          - Improvement: ${{ steps.calc.outputs.improvement }}%
+          - Speedup: ${{ steps.calc.outputs.speedup }}x
+
+          Formula:
+          - Improvement(%) = ((Baseline - Optimized) / Baseline) * 100
+          - Speedup(x) = Baseline / Optimized
+          EOF
+
+      - name: Publish summary
+        shell: bash
+        run: |
+          cat cache-optimization-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cache-optimization-report
+          path: cache-optimization-report.md
+          if-no-files-found: error

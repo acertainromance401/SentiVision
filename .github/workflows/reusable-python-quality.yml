@@ -1,0 +1,106 @@
+name: Reusable Python Quality
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        required: true
+        type: string
+      python-version:
+        required: true
+        type: string
+      use-cache:
+        required: false
+        type: boolean
+        default: true
+      requirements-file:
+        required: false
+        type: string
+        default: requirements-ci.txt
+      run-lint:
+        required: false
+        type: boolean
+        default: true
+      run-tests:
+        required: false
+        type: boolean
+        default: true
+      artifact-name:
+        required: false
+        type: string
+        default: quality-report
+    secrets:
+      SENTIVISION_API_KEY:
+        required: false
+    outputs:
+      elapsed_seconds:
+        description: End-to-end elapsed time in seconds
+        value: ${{ jobs.quality.outputs.elapsed_seconds }}
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ${{ inputs.os }}
+    outputs:
+      elapsed_seconds: ${{ steps.metrics.outputs.elapsed_seconds }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start timer
+        id: start
+        shell: bash
+        run: echo "ts=$(date +%s)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Python and dependencies
+        uses: ./.github/actions/python-ci-setup
+        with:
+          python-version: ${{ inputs.python-version }}
+          use-cache: ${{ inputs.use-cache }}
+          requirements-file: ${{ inputs.requirements-file }}
+
+      - name: Inject secret for tests (safe)
+        shell: bash
+        env:
+          SENTIVISION_API_KEY: ${{ secrets.SENTIVISION_API_KEY }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          Path('.env.ci').write_text(
+              f"SENTIVISION_API_KEY={os.getenv('SENTIVISION_API_KEY', '')}\n",
+              encoding='utf-8',
+          )
+          print('.env.ci generated with masked secret handling.')
+          PY
+
+      - name: Lint
+        if: inputs.run-lint
+        shell: bash
+        run: |
+          ruff check src tests --select E9,F63,F7,F82
+
+      - name: Test
+        if: inputs.run-tests
+        shell: bash
+        run: |
+          pytest -q tests/test_smoke.py --junitxml=pytest-report.xml
+
+      - name: Upload quality artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: pytest-report.xml
+          if-no-files-found: ignore
+
+      - name: Calculate elapsed time
+        id: metrics
+        shell: bash
+        run: |
+          elapsed=$(( $(date +%s) - ${{ steps.start.outputs.ts }} ))
+          echo "elapsed_seconds=${elapsed}" >> "$GITHUB_OUTPUT"
+          echo "Elapsed seconds: ${elapsed}"

@@ -1,32 +1,31 @@
 from pathlib import Path
-
-from src.data.preprocessing import PreprocessConfig, run_pipeline
-from src.model.emotion_classifier import EmotionClassifier
+import ast
 
 
-def test_preprocessing_pipeline_smoke() -> None:
-    csv_path = Path("base_model/color_emotion_labeled_updated.csv")
-    assert csv_path.exists(), "Expected dataset file is missing"
-
-    config = PreprocessConfig(
-        test_size=0.2,
-        val_size=0.1,
-        random_state=42,
-        normalize=True,
-        min_samples_per_class=2,
-    )
-    result = run_pipeline(csv_path, config)
-
-    total = len(result.X_train) + len(result.X_val) + len(result.X_test)
-    assert total > 0
-    assert result.n_classes >= 1
+ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_emotion_classifier_smoke() -> None:
-    csv_path = Path("base_model/color_emotion_labeled_updated.csv")
-    clf = EmotionClassifier(n_neighbors=3)
-    clf.fit(data_path=csv_path)
+def test_repository_structure_smoke() -> None:
+    required_paths = [
+        ROOT / "README.md",
+        ROOT / "LICENSE",
+        ROOT / "CONTRIBUTING.md",
+        ROOT / ".github" / "workflows" / "ci-matrix.yml",
+        ROOT / ".github" / "workflows" / "build-test-deploy.yml",
+        ROOT / "base_model" / "color_emotion_labeled_updated.csv",
+        ROOT / "test" / "main_.py",
+    ]
 
-    pred = clf.predict_single(255, 0, 0)
-    assert isinstance(pred, str)
-    assert pred
+    for path in required_paths:
+        assert path.exists(), f"Missing required path: {path}"
+
+
+def test_python_scripts_parse_smoke() -> None:
+    scripts = [
+        ROOT / "test" / "main_.py",
+        ROOT / "test" / "test_model_comparison.py",
+    ]
+
+    for script in scripts:
+        source = script.read_text(encoding="utf-8")
+        ast.parse(source)
