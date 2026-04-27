@@ -71,14 +71,19 @@ jobs:
 
       - name: Create build artifact
         run: |
-          tar -czf sentivision-build.tar.gz \
-            src \
-            tests \
-            docs \
-            README.md \
-            CONTRIBUTING.md \
-            CODE_OF_CONDUCT.md \
-            LICENSE
+          items=()
+          for p in src tests docs README.md CONTRIBUTING.md CODE_OF_CONDUCT.md LICENSE; do
+            if [[ -e "$p" ]]; then
+              items+=("$p")
+            fi
+          done
+
+          if [[ ${#items[@]} -eq 0 ]]; then
+            echo "No build inputs found"
+            exit 1
+          fi
+
+          tar -czf sentivision-build.tar.gz "${items[@]}"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
