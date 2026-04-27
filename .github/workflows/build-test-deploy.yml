@@ -96,6 +96,8 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment:
       name: production
+    env:
+      DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
 
     steps:
       - name: Download build artifact
@@ -104,15 +106,13 @@ jobs:
           name: sentivision-build
 
       - name: Deploy via webhook when secret exists
-        if: ${{ secrets.DEPLOY_WEBHOOK_URL != '' }}
-        env:
-          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+        if: env.DEPLOY_WEBHOOK_URL != ''
         run: |
           curl -X POST "$DEPLOY_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -d '{"service":"SentiVision","event":"deploy","source":"github-actions"}'
 
       - name: Skip deploy if secret missing
-        if: ${{ secrets.DEPLOY_WEBHOOK_URL == '' }}
+        if: env.DEPLOY_WEBHOOK_URL == ''
         run: |
           echo "DEPLOY_WEBHOOK_URL is not configured. Deploy step skipped safely."
