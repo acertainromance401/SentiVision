@@ -76,18 +76,8 @@ jobs:
             echo "improvement=0.00" >> "$GITHUB_OUTPUT"
             echo "speedup=1.00" >> "$GITHUB_OUTPUT"
           else
-            improvement=$(python - <<PY
-            b=$base
-            o=$opt
-            print(f"{((b-o)/b)*100:.2f}")
-            PY
-            )
-            speedup=$(python - <<PY
-            b=$base
-            o=$opt
-            print(f"{b/o:.2f}" if o > 0 else "inf")
-            PY
-            )
+            improvement=$(awk -v b="$base" -v o="$opt" 'BEGIN {if (b>0) printf "%.2f", ((b-o)/b)*100; else printf "0.00"}')
+            speedup=$(awk -v b="$base" -v o="$opt" 'BEGIN {if (o>0) printf "%.2f", b/o; else printf "inf"}')
             echo "base=$base" >> "$GITHUB_OUTPUT"
             echo "opt=$opt" >> "$GITHUB_OUTPUT"
             echo "improvement=$improvement" >> "$GITHUB_OUTPUT"
