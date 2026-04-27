@@ -81,7 +81,16 @@ jobs:
         if: inputs.run-lint
         shell: bash
         run: |
-          ruff check src tests --select E9,F63,F7,F82
+          targets=()
+          [[ -d src ]] && targets+=(src)
+          [[ -d tests ]] && targets+=(tests)
+
+          if [[ ${#targets[@]} -eq 0 ]]; then
+            echo "No lint targets found. Skipping lint step safely."
+            exit 0
+          fi
+
+          ruff check "${targets[@]}" --select E9,F63,F7,F82
 
       - name: Test
         if: inputs.run-tests
