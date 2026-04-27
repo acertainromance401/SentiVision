@@ -1,0 +1,118 @@
+name: Build Test Deploy Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy pandas scikit-learn matplotlib pytest
+
+      - name: Build validation (compile)
+        run: |
+          python -m compileall src
+
+      - name: Create build artifact
+        run: |
+          tar -czf sentivision-build.tar.gz \
+            src \
+            tests \
+            docs \
+            README.md \
+            CONTRIBUTING.md \
+            CODE_OF_CONDUCT.md \
+            LICENSE
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentivision-build
+          path: sentivision-build.tar.gz
+          if-no-files-found: error
+
+  test:
+    name: Test artifact
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy pandas scikit-learn matplotlib pytest
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sentivision-build
+
+      - name: Validate artifact and run tests
+        run: |
+          tar -xzf sentivision-build.tar.gz
+          pytest -q tests/test_smoke.py --junitxml=test-report.xml
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btd-test-report
+          path: test-report.xml
+          if-no-files-found: error
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sentivision-build
+
+      - name: Deploy via webhook when secret exists
+        if: ${{ secrets.DEPLOY_WEBHOOK_URL != '' }}
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+        run: |
+          curl -X POST "$DEPLOY_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d '{"service":"SentiVision","event":"deploy","source":"github-actions"}'
+
+      - name: Skip deploy if secret missing
+        if: ${{ secrets.DEPLOY_WEBHOOK_URL == '' }}
+        run: |
+          echo "DEPLOY_WEBHOOK_URL is not configured. Deploy step skipped safely."

@@ -1,0 +1,71 @@
+name: CI Matrix Lint and Test
+
+on:
+  push:
+    branches:
+      - main
+      - feat/**
+      - fix/**
+      - docs/**
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-test:
+    name: lint and test (${{ matrix.os }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install numpy pandas scikit-learn matplotlib pytest ruff
+
+      - name: Inject secret for tests (safe)
+        env:
+          SENTIVISION_API_KEY: ${{ secrets.SENTIVISION_API_KEY }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          Path('.env.ci').write_text(
+              f"SENTIVISION_API_KEY={os.getenv('SENTIVISION_API_KEY', '')}\n",
+              encoding='utf-8',
+          )
+          print('.env.ci generated (secret value masked by GitHub).')
+          PY
+
+      - name: Lint (syntax and undefined checks)
+        run: |
+          ruff check src tests --select E9,F63,F7,F82
+
+      - name: Test
+        run: |
+          pytest -q tests/test_smoke.py --junitxml=pytest-report.xml
+
+      - name: Upload test report artifact
+        if: always() && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-matrix-pytest-report
+          path: pytest-report.xml
+          if-no-files-found: error
