@@ -80,14 +80,14 @@ jobs:
             b=$base
             o=$opt
             print(f"{((b-o)/b)*100:.2f}")
-PY
-)
+            PY
+            )
             speedup=$(python - <<PY
             b=$base
             o=$opt
             print(f"{b/o:.2f}" if o > 0 else "inf")
-PY
-)
+            PY
+            )
             echo "base=$base" >> "$GITHUB_OUTPUT"
             echo "opt=$opt" >> "$GITHUB_OUTPUT"
             echo "improvement=$improvement" >> "$GITHUB_OUTPUT"
