@@ -55,7 +55,7 @@ jobs:
           EOF
 
       - name: Create weekly issue
-        uses: peter-evans/create-issue-from-file@v5
+        uses: peter-evans/create-issue-from-file@v6
         with:
           title: "weekly summary: automated draft"
           content-filepath: /tmp/weekly-summary.md
