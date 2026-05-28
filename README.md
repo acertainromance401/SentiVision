@@ -191,3 +191,33 @@ AWS(ECS Fargate) 기반 자동 배포 워크플로우를 제공합니다.
 
 - `npm run demo:flags-ab`
 - `npm run demo:canary`
+
+## User Scenario Experiments (10 LLM Personas)
+
+관련 파일:
+
+- 페르소나 데이터: `experiments/user-research/personas.json`
+- 시나리오 정의: `experiments/user-research/scenarios.json`
+- 피드백 생성/평가 코드: `experiments/user-research/generate_persona_feedback.js`
+- 피드백 데이터(10명): `experiments/user-research/persona_feedback.json`
+- 피드백 리포트: `experiments/user-research/persona_feedback_report.md`
+
+2주 A/B 테스트:
+
+- 2주 지표 데이터: `experiments/ab-test/two_week_ab_metrics.csv`
+- 분석 코드: `experiments/ab-test/analyze_two_week_ab.js`
+- 분석 리포트: `experiments/ab-test/ab_two_week_report.md`
+
+결정 기록:
+
+- ADR: `docs/adr/0002-experiment-decision-persevere.md`
+
+자동화(선택과제):
+
+- 실험 백로그 이슈 템플릿: `.github/ISSUE_TEMPLATE/experiment_backlog.yml`
+- 주간 지표 수집/리포팅 워크플로우: `.github/workflows/weekly-experiment-report.yml`
+
+실행 명령:
+
+- `npm run report:personas`
+- `npm run report:ab-two-week`

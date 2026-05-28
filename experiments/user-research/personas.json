@@ -1,0 +1,12 @@
+[
+  {"id":"p01","name":"Mina","segment":"beginner-creator","style":"encouraging","goal":"감정 기록을 쉽게 시작","painPoint":"용어가 어렵다"},
+  {"id":"p02","name":"Jiho","segment":"pro-illustrator","style":"direct","goal":"작업 효율 극대화","painPoint":"반응 지연"},
+  {"id":"p03","name":"Ari","segment":"student","style":"curious","goal":"포트폴리오 개선","painPoint":"근거 설명 부족"},
+  {"id":"p04","name":"Noah","segment":"accessibility-user","style":"precise","goal":"접근성 높은 UI","painPoint":"작은 텍스트"},
+  {"id":"p05","name":"Yuna","segment":"therapeutic-journaler","style":"empathetic","goal":"감정 트래킹 루틴","painPoint":"피드백이 차갑다"},
+  {"id":"p06","name":"Leo","segment":"data-driven","style":"analytical","goal":"정량 지표 확인","painPoint":"히스토리 비교 기능 부족"},
+  {"id":"p07","name":"Hana","segment":"mobile-first","style":"brief","goal":"모바일 완결 사용","painPoint":"스크롤 과다"},
+  {"id":"p08","name":"Rin","segment":"experimenter","style":"exploratory","goal":"다양한 실험","painPoint":"설정 토글 위치 불명확"},
+  {"id":"p09","name":"Tae","segment":"privacy-sensitive","style":"cautious","goal":"로컬 처리 신뢰","painPoint":"데이터 보관 정책 불명확"},
+  {"id":"p10","name":"Sora","segment":"community-builder","style":"collaborative","goal":"팀과 피드백 공유","painPoint":"공유 링크 워크플로우 부족"}
+]

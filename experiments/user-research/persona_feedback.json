@@ -1,0 +1,152 @@
+[
+  {
+    "personaId": "p01",
+    "personaName": "Mina",
+    "segment": "beginner-creator",
+    "llmPersonaPattern": "encouraging",
+    "scenarioId": "s1",
+    "scenarioTitle": "첫 감정 분석 시작",
+    "feedbackText": "시작 장벽이 낮아져서 계속 쓰고 싶어요. (첫 감정 분석 시작)",
+    "scores": {
+      "usability": 5,
+      "clarity": 5,
+      "trust": 5
+    },
+    "recommendation": "현재 방향 유지"
+  },
+  {
+    "personaId": "p02",
+    "personaName": "Jiho",
+    "segment": "pro-illustrator",
+    "llmPersonaPattern": "direct",
+    "scenarioId": "s2",
+    "scenarioTitle": "A/B UI에서 결과 해석",
+    "feedbackText": "핵심은 속도와 즉시성입니다. (A/B UI에서 결과 해석)",
+    "scores": {
+      "usability": 4,
+      "clarity": 5,
+      "trust": 5
+    },
+    "recommendation": "현재 방향 유지"
+  },
+  {
+    "personaId": "p03",
+    "personaName": "Ari",
+    "segment": "student",
+    "llmPersonaPattern": "curious",
+    "scenarioId": "s3",
+    "scenarioTitle": "피드백 제출 및 다음 추천 액션 확인",
+    "feedbackText": "왜 그런 결과인지 더 배우고 싶어요. (피드백 제출 및 다음 추천 액션 확인)",
+    "scores": {
+      "usability": 3,
+      "clarity": 5,
+      "trust": 5
+    },
+    "recommendation": "현재 방향 유지"
+  },
+  {
+    "personaId": "p04",
+    "personaName": "Noah",
+    "segment": "accessibility-user",
+    "llmPersonaPattern": "precise",
+    "scenarioId": "s1",
+    "scenarioTitle": "첫 감정 분석 시작",
+    "feedbackText": "명확한 대비와 접근성 옵션이 필요해요. (첫 감정 분석 시작)",
+    "scores": {
+      "usability": 5,
+      "clarity": 2,
+      "trust": 2
+    },
+    "recommendation": "결과 근거 UI 강화"
+  },
+  {
+    "personaId": "p05",
+    "personaName": "Yuna",
+    "segment": "therapeutic-journaler",
+    "llmPersonaPattern": "empathetic",
+    "scenarioId": "s2",
+    "scenarioTitle": "A/B UI에서 결과 해석",
+    "feedbackText": "감정 표현이 더 따뜻하면 좋겠어요. (A/B UI에서 결과 해석)",
+    "scores": {
+      "usability": 4,
+      "clarity": 2,
+      "trust": 2
+    },
+    "recommendation": "결과 근거 UI 강화"
+  },
+  {
+    "personaId": "p06",
+    "personaName": "Leo",
+    "segment": "data-driven",
+    "llmPersonaPattern": "analytical",
+    "scenarioId": "s3",
+    "scenarioTitle": "피드백 제출 및 다음 추천 액션 확인",
+    "feedbackText": "수치 비교와 추세선이 중요합니다. (피드백 제출 및 다음 추천 액션 확인)",
+    "scores": {
+      "usability": 3,
+      "clarity": 2,
+      "trust": 2
+    },
+    "recommendation": "결과 근거 UI 강화"
+  },
+  {
+    "personaId": "p07",
+    "personaName": "Hana",
+    "segment": "mobile-first",
+    "llmPersonaPattern": "brief",
+    "scenarioId": "s1",
+    "scenarioTitle": "첫 감정 분석 시작",
+    "feedbackText": "한 화면에서 끝나면 좋겠어요. (첫 감정 분석 시작)",
+    "scores": {
+      "usability": 5,
+      "clarity": 3,
+      "trust": 3
+    },
+    "recommendation": "결과 근거 UI 강화"
+  },
+  {
+    "personaId": "p08",
+    "personaName": "Rin",
+    "segment": "experimenter",
+    "llmPersonaPattern": "exploratory",
+    "scenarioId": "s2",
+    "scenarioTitle": "A/B UI에서 결과 해석",
+    "feedbackText": "실험 옵션을 더 쉽게 찾고 싶어요. (A/B UI에서 결과 해석)",
+    "scores": {
+      "usability": 4,
+      "clarity": 3,
+      "trust": 3
+    },
+    "recommendation": "결과 근거 UI 강화"
+  },
+  {
+    "personaId": "p09",
+    "personaName": "Tae",
+    "segment": "privacy-sensitive",
+    "llmPersonaPattern": "cautious",
+    "scenarioId": "s3",
+    "scenarioTitle": "피드백 제출 및 다음 추천 액션 확인",
+    "feedbackText": "개인정보 보관 기준을 먼저 보여주세요. (피드백 제출 및 다음 추천 액션 확인)",
+    "scores": {
+      "usability": 3,
+      "clarity": 3,
+      "trust": 3
+    },
+    "recommendation": "결과 근거 UI 강화"
+  },
+  {
+    "personaId": "p10",
+    "personaName": "Sora",
+    "segment": "community-builder",
+    "llmPersonaPattern": "collaborative",
+    "scenarioId": "s1",
+    "scenarioTitle": "첫 감정 분석 시작",
+    "feedbackText": "팀 공유 흐름이 자연스러워야 해요. (첫 감정 분석 시작)",
+    "scores": {
+      "usability": 5,
+      "clarity": 3,
+      "trust": 3
+    },
+    "recommendation": "결과 근거 UI 강화"
+  }
+]

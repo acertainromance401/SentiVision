@@ -13,7 +13,9 @@
     "test:e2e": "playwright test",
     "audit:json": "npm audit --json",
     "demo:flags-ab": "node experiments/ab-assignment-demo.js",
-    "demo:canary": "node experiments/canary-rollout-simulator.js"
+    "demo:canary": "node experiments/canary-rollout-simulator.js",
+    "report:personas": "node experiments/user-research/generate_persona_feedback.js",
+    "report:ab-two-week": "node experiments/ab-test/analyze_two_week_ab.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.0",
