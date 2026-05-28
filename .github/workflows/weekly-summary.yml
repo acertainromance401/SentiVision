@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Build summary
         id: summary
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -55,7 +55,7 @@ jobs:
           EOF
 
       - name: Create weekly issue
-        uses: peter-evans/create-issue-from-file@v5
+        uses: peter-evans/create-issue-from-file@v6
         with:
           title: "weekly summary: automated draft"
           content-filepath: /tmp/weekly-summary.md
