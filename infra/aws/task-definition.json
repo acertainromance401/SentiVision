@@ -6,12 +6,12 @@
   ],
   "cpu": "256",
   "memory": "512",
-  "executionRoleArn": "arn:aws:iam::123456789012:role/sentivisionEcsTaskExecutionRole",
-  "taskRoleArn": "arn:aws:iam::123456789012:role/sentivisionEcsTaskRole",
+  "executionRoleArn": "arn:aws:iam::484056256011:role/sentivisionEcsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::484056256011:role/sentivisionEcsTaskRole",
   "containerDefinitions": [
     {
       "name": "sentivision",
-      "image": "123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/sentivision:latest",
+      "image": "484056256011.dkr.ecr.ap-northeast-2.amazonaws.com/sentivision:latest",
       "essential": true,
       "portMappings": [
         {
