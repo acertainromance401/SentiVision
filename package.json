@@ -1,0 +1,22 @@
+{
+  "name": "@acertainromance401/sentivision-utils",
+  "version": "1.0.1",
+  "description": "SentiVision npm helper package for CI/CD examples and integrations.",
+  "main": "index.js",
+  "type": "commonjs",
+  "files": [
+    "index.js"
+  ],
+  "scripts": {
+    "test": "node -e \"const p=require('./index');console.log(p.getPackageInfo().name)\"",
+    "audit:json": "npm audit --json"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acertainromance401/SentiVision.git"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,11 @@
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+COPY docker/health_server.py /app/health_server.py
+
+EXPOSE 8080
+
+CMD ["python", "/app/health_server.py"]
