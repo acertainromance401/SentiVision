@@ -8,9 +8,11 @@
     "index.js"
   ],
   "scripts": {
+    "start:api": "node src/api/server.js",
     "test": "jest",
     "test:coverage": "jest --coverage",
     "test:e2e": "playwright test",
+    "mini-eval": "node scripts/mini-eval.js",
     "audit:json": "npm audit --json",
     "demo:flags-ab": "node experiments/ab-assignment-demo.js",
     "demo:canary": "node experiments/canary-rollout-simulator.js",
