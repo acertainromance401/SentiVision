@@ -170,3 +170,24 @@ AWS(ECS Fargate) 기반 자동 배포 워크플로우를 제공합니다.
 
 - `AWS_ROLE_TO_ASSUME`
 - `ECS_HEALTHCHECK_URL` (예: `https://api.example.com`)
+
+## Feature Flags / A-B Test / Canary
+
+구현 파일:
+
+- Feature flag 코드: `src/featureFlags.js`
+- A/B 할당 로직: `src/abTesting.js`
+- 이벤트 추적 로깅: `src/eventTracker.js`
+- 실험 데모 실행: `experiments/ab-assignment-demo.js`
+- Canary 롤아웃 설정: `experiments/canary-rollout-config.json`
+- Canary 롤백 시뮬레이터: `experiments/canary-rollout-simulator.js`
+
+실행 로그:
+
+- 실험 로그: `experiments/logs/ab-events.ndjson`
+- 롤아웃 로그: `experiments/logs/canary-rollout-log.json`
+
+실행 명령:
+
+- `npm run demo:flags-ab`
+- `npm run demo:canary`

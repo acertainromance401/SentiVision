@@ -1,0 +1,10 @@
+{
+  "service": "sentivision-service",
+  "region": "ap-northeast-2",
+  "stages": [1, 10, 50, 100],
+  "healthPolicy": {
+    "maxErrorRatePercent": 5,
+    "maxLatencyMsP95": 800,
+    "consecutiveFailuresToRollback": 1
+  }
+}

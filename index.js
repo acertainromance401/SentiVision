@@ -1,3 +1,6 @@
+const { evaluateFlags, isFlagEnabledForUser, DEFAULT_FLAGS } = require("./src/featureFlags");
+const { EXPERIMENTS, assignUserToExperiment } = require("./src/abTesting");
+
 function getPackageInfo() {
   return {
     name: "@acertainromance401/sentivision-utils",
@@ -6,5 +9,10 @@ function getPackageInfo() {
 }
 
 module.exports = {
-  getPackageInfo
+  getPackageInfo,
+  DEFAULT_FLAGS,
+  evaluateFlags,
+  isFlagEnabledForUser,
+  EXPERIMENTS,
+  assignUserToExperiment
 };

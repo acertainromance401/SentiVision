@@ -9,7 +9,9 @@
   ],
   "scripts": {
     "test": "node -e \"const p=require('./index');console.log(p.getPackageInfo().name)\"",
-    "audit:json": "npm audit --json"
+    "audit:json": "npm audit --json",
+    "demo:flags-ab": "node experiments/ab-assignment-demo.js",
+    "demo:canary": "node experiments/canary-rollout-simulator.js"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
