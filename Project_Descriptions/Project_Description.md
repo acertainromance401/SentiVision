@@ -4,6 +4,7 @@
 통합 문서 버전: v1.6
 
 ## 문서 바로가기
+- 한 장 요약: [Product_Summary_SentiVision.md](Product_Summary_SentiVision.md)
 - 개발 과정/도구 제안서: [Development_Process_and_Tools_Proposal.md](Development_Process_and_Tools_Proposal.md)
 - PRD: [PRD_SentiVision.md](PRD_SentiVision.md)
 - WBS: [WBS_SentiVision.md](WBS_SentiVision.md)

@@ -65,6 +65,7 @@ SentiVision은 개인 창작 사용자가 마음껏 그림을 그리고, 그 과
 
 상세 실행 방법과 폴더별 사용 가이드는 아래 문서를 참고하세요.
 
+- 한 장 요약: [Project_Descriptions/Product_Summary_SentiVision.md](Project_Descriptions/Product_Summary_SentiVision.md)
 - test/README.md
 
 참고:
