@@ -12,6 +12,7 @@
 | **1. 프로젝트 관리** | 주간 계획/회고, 리스크 로그 | 없음 | 미시작 | GitHub Projects 또는 Wiki 설정 |
 | **2. 요구사항/문서 정합화** | `Project_Descriptions` 세트 (PRD/UserJourney/Wireframe/ScreenFlow) | `Project_Descriptions/*.md` | 완료 (2026-03-25) | 문제 정의 정렬 상태 주간 점검 |
 | **3. 캔버스 UX 설계** | 와이어프레임, 화면 흐름도 | `Project_Descriptions/Wireframe_SentiVision.md` | 완료 (설계 단계) | SwiftUI 프로토타입 구현 필요 |
+| **3-1. iPhone 감상 앱** | 동반 앱 아키텍처, 감상 전용 화면 | `Project_Descriptions/Wireframe_SentiVision.md` | 미시작 | 무료 감상 앱 구조 정의 |
 | **4. API 설계/구현** | API 명세, FastAPI 코드 | 설계만 완료 / 구현 미작 | 설계 단계 | FastAPI 프로젝트 생성 + 4.1~4.4 구현 |
 | **5. 분석 엔진/데이터 파이프라인** | KNN/KMeans 로직, 데이터 품질 리포트 | `test/main_.py`, `test/test_model_comparison.py` | 진행 중 (CLI) | 엔진 모듈화 + API 연동 + 학습 파이프라인 |
 | **6. 피드백 루프** | CSV 업데이트, 피드백 처리 로그 | `test/main_.py`, `test/outputs/comparison_user_feedback.csv` | 진행 중 (CLI) | 앱 피드백 수집 UI + API 엔드포인트 |
@@ -67,12 +68,19 @@
 
 | 화면 | 정의 | 필요 SwiftUI 컴포넌트 | 의존성 | 상태 |
 |------|------|---------|--------|------|
-| HomePage | 최근 감정 + 최근 7일 분석수 + "새 작품 시작" | List, Card, Button | WBS 6 (아카이브 데이터) | 설계 완료 |
+| HomePage | 환영 메시지 + 최근 7일 분석수 + "새 작품 시작" | List, Card, Button | WBS 6 (아카이브 데이터) | 설계 완료 |
 | CanvasView | 그리기 영역 + 다중 색상 선택(색상휠/HEX/RGB/스포이트) + 팔레트 하단 표시 | Canvas, @State palette, ColorPicker, TextField, Slider | iOS 14+ Canvas API | 설계 완료 |
 | AnalysisLoading | 단계형 로딩 메시지 | ProgressView, Text | WBS 5 (API 응답) | 설계 완료 |
 | ResultCard | 감정 제목 + 해석 문장 + 점수 + 색상 스와치 | VStack, Rectangle (color) | WBS 5 (API 응답) | 설계 완료 |
 | FeedbackForm | 감정 선택 + 메모 입력 | Picker, TextField, Button | WBS 6 (저장) | 설계 완료 |
 | ArchiveView | 과거 해석 기록 나열 | List, NavigationLink | WBS 6 (데이터 조회) | 설계 완료 |
+
+#### WBS 3-1 — iPhone 감상 앱(후속)
+
+| 화면 | 정의 | 필요 SwiftUI 컴포넌트 | 의존성 | 상태 |
+|------|------|---------|--------|------|
+| ViewingHome | 작품 카드 목록, 아카이브 탐색 | List, Card, NavigationLink | WBS 6 (아카이브 데이터) | 미시작 |
+| ArtworkDetail | 작품 + 감정 제목 + 해석문 감상 | VStack, Image, Text | WBS 6 (아카이브 데이터) | 미시작 |
 
 **구현 계획**:
 - 프로토타입: 단계 1 = HomePage + CanvasView (터치 감지, 색상 추출)
