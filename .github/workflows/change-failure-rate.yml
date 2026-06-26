@@ -1,0 +1,54 @@
+name: DORA Change Failure Rate
+
+on:
+  schedule:
+    - cron: '10 0 * * 0'
+  workflow_dispatch:
+
+permissions:
+  issues: read
+  contents: read
+
+jobs:
+  change-failure-rate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Measure CFR (proxy: incident issues vs pushes to main)"
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const now = new Date();
+            const since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+            const commits = await github.paginate(github.rest.repos.listCommits, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: 'main',
+              since: since.toISOString(),
+              per_page: 100,
+            });
+            const deployments = commits.length;
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              labels: 'incident',
+              since: since.toISOString(),
+              per_page: 100,
+            });
+
+            const incidents = issues.filter(i => !i.pull_request && i.created_at >= since.toISOString());
+            const failedChanges = incidents.length;
+            const rate = deployments === 0 ? 0 : (failedChanges / deployments) * 100;
+
+            core.summary
+              .addHeading('DORA: Change Failure Rate (CFR)')
+              .addRaw('Proxy metric: incident-labeled issues created in last 30 days / pushes to main in last 30 days.\n\n')
+              .addTable([
+                [{data: 'Window', header: true}, {data: 'Last 30 days', header: false}],
+                [{data: 'Failed changes (incident issues)', header: true}, {data: String(failedChanges), header: false}],
+                [{data: 'Total changes (pushes to main)', header: true}, {data: String(deployments), header: false}],
+                [{data: 'CFR (%)', header: true}, {data: rate.toFixed(2), header: false}],
+              ])
+              .write();

@@ -1,0 +1,36 @@
+name: CI Matrix Lint and Test
+
+on:
+  push:
+    branches:
+      - main
+      - feat/**
+      - fix/**
+      - docs/**
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: quality (${{ matrix.os }}, py${{ matrix.python-version }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    uses: ./.github/workflows/reusable-python-quality.yml
+    with:
+      os: ${{ matrix.os }}
+      python-version: ${{ matrix.python-version }}
+      use-cache: true
+      requirements-file: requirements-ci.txt
+      run-lint: true
+      run-tests: true
+      artifact-name: ci-matrix-${{ matrix.os }}-py${{ matrix.python-version }}
+    secrets: inherit

@@ -1,0 +1,33 @@
+# CODEOWNERS
+# 각 경로의 기본 리뷰어를 지정합니다.
+# PR이 열릴 때 해당 파일 변경이 포함되면 자동으로 리뷰 요청됩니다.
+# 문서: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# 전체 리포지토리 기본 소유자
+*                           @acertainromance401
+
+# 모델 / 데이터 관련 코드
+base_model/                 @acertainromance401
+src/model/                  @acertainromance401
+src/data/                   @acertainromance401
+*.csv                       @acertainromance401
+
+# API 코드
+src/api/                    @acertainromance401
+
+# 테스트
+test/                       @acertainromance401
+tests/                      @acertainromance401
+
+# 인프라 / CI
+docker-compose.yml          @acertainromance401
+prometheus.yml              @acertainromance401
+.github/workflows/          @acertainromance401
+
+# 문서
+docs/                       @acertainromance401
+*.md                        @acertainromance401
+CONTRIBUTING.md             @acertainromance401
+
+# Analytics
+analytics/                  @acertainromance401

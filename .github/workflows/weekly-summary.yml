@@ -1,0 +1,63 @@
+name: Weekly Summary (Draft)
+
+on:
+  schedule:
+    - cron: "0 2 * * 1" # every Monday 02:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  weekly-summary:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build summary
+        id: summary
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+            const prs = await github.paginate(github.rest.pulls.list, {
+              owner, repo, state: 'closed', per_page: 100
+            });
+            const merged = prs.filter(pr => pr.merged_at && pr.merged_at >= oneWeekAgo);
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'all', per_page: 100
+            });
+            const openedIssues = issues.filter(i => !i.pull_request && i.created_at >= oneWeekAgo).length;
+            const closedIssues = issues.filter(i => !i.pull_request && i.closed_at && i.closed_at >= oneWeekAgo).length;
+
+            const body = [
+              `## Weekly Summary (${new Date().toISOString().slice(0,10)})`,
+              '',
+              `- Merged PRs: ${merged.length}`,
+              `- Opened Issues: ${openedIssues}`,
+              `- Closed Issues: ${closedIssues}`,
+              '',
+              '### Notes',
+              '- This is a draft automation report.',
+              '- Add sprint goals and blockers manually if needed.'
+            ].join('\n');
+
+            core.setOutput('body', body);
+
+      - name: Create weekly issue
+        run: |
+          cat <<'EOF' > /tmp/weekly-summary.md
+          ${{ steps.summary.outputs.body }}
+          EOF
+
+      - name: Create weekly issue
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: "weekly summary: automated draft"
+          content-filepath: /tmp/weekly-summary.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

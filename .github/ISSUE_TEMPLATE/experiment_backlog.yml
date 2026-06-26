@@ -1,0 +1,36 @@
+name: Experiment Backlog
+about: 실험 백로그 등록 템플릿
+title: "[Experiment] "
+labels: ["experiment", "backlog"]
+body:
+  - type: input
+    id: hypothesis
+    attributes:
+      label: Hypothesis
+      placeholder: 예) Variant B는 D7 retention을 10% 이상 개선한다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: metric
+    attributes:
+      label: Metrics
+      placeholder: activation_rate, feedback_submit_rate, d7_retention
+    validations:
+      required: true
+
+  - type: textarea
+    id: rollout
+    attributes:
+      label: Rollout Plan
+      placeholder: 1% -> 10% -> 50% -> 100%
+    validations:
+      required: true
+
+  - type: textarea
+    id: stop_condition
+    attributes:
+      label: Stop Condition
+      placeholder: 에러율 > 5% 또는 D7 retention 하락 시 롤백
+    validations:
+      required: true

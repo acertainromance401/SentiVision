@@ -1,0 +1,50 @@
+예측 결과: ['CAUTION' 'FEAR' 'INTENSITY' 'INTENSITY' 'CREATIVITY' 'CREATIVITY'
+ 'CREATIVITY' 'ALERTNESS' 'COURAGE' 'ENERGY' 'ENERGY' 'ALERTNESS'
+ 'ALERTNESS' 'FRESHNESS' 'FRESHNESS' 'FRESHNESS' 'AUTHORITY' 'AUTHORITY'
+ 'AUTHORITY' 'AUTHORITY' 'BALANCE' 'AUTHORITY' 'ALIENATION' 'HEALING'
+ 'HEALING' 'HEALING' 'AUTHORITY' 'DEATH' 'BALANCE' 'BALANCE' 'BALANCE'
+ 'BALANCE' 'CONFIDENCE' 'CONFIDENCE' 'CONFIDENCE' 'IDEALISTIC' 'GROWTH'
+ 'CALMNESS' 'IDEALISTIC' 'AUTHORITY' 'IDEALISTIC' 'LONELINESS'
+ 'LONELINESS' 'AUTHORITY' 'FATIGUE' 'GROWTH' 'GROWTH' 'BALANCE' 'PASSION'
+ 'PASSION' 'PASSION' 'FEAR' 'GROUNDED' 'GROUNDED' 'GROUNDED' 'EXCITEMENT'
+ 'EXCITEMENT' 'EXCITEMENT' 'CALMNESS' 'CALMNESS' 'COURAGE' 'COURAGE'
+ 'SPIRITUAL' 'SPIRITUAL' 'SPIRITUAL' 'COOPERATION' 'COOPERATION'
+ 'COOPERATION' 'ABUNDANCE' 'ABUNDANCE' 'ABUNDANCE' 'LOVE' 'LOVE' 'CAUTION'
+ 'CAUTION' 'DYNAMIC' 'DYNAMIC' 'OPTIMISM' 'OPTIMISM' 'BEAUTY' 'BEAUTY'
+ 'NATURE' 'NATURE' 'COMFORT' 'COMFORT' 'CONNECTION' 'CONNECTION' 'FEAR'
+ 'ANXIETY' 'ANXIETY' 'ANXIETY' 'DARKNESS' 'DARKNESS' 'DARKNESS'
+ 'ALIENATION' 'ALIENATION' 'FATIGUE' 'FATIGUE' 'FATIGUE' 'DEPRESSION'
+ 'AUTHORITY' 'AUTHORITY' 'DESPAIR' 'LONELINESS' 'LONELINESS' 'LONELINESS'
+ 'LONELINESS' 'CHAOS' 'CHAOS' 'DESPAIR']
+       R_norm    G_norm    B_norm actual_emotion predicted_emotion
+0    0.588235  0.141176  0.101961      INTENSITY           CAUTION
+1    0.862745  0.117647  0.235294      INTENSITY              FEAR
+2    0.592157  0.074510  0.062745           RAGE         INTENSITY
+3    0.552941  0.117647  0.062745        ROMANCE         INTENSITY
+4    0.490196  0.078431  0.603922     CREATIVITY        CREATIVITY
+..        ...       ...       ...            ...               ...
+105  0.882353  0.882353  0.882353     LONELINESS        LONELINESS
+106  0.882353  0.882353  0.882353     LONELINESS        LONELINESS
+107  0.827451  0.596078  0.400000          CHAOS             CHAOS
+108  0.827451  0.596078  0.400000          CHAOS             CHAOS
+109  0.470588  0.380392  0.294118            SAD           DESPAIR
+
+[110 rows x 5 columns]
+정확도: 0.4727272727272727
+분석할 이미지 파일 경로를 입력하세요: 
+[saliency] Extracted Color-Emotions:
+color 1: RGB = (30, 38, 56) | 감정 예측 = DARKNESS
+color 2: RGB = (142, 157, 154) | 감정 예측 = BALANCE
+color 3: RGB = (71, 92, 126) | 감정 예측 = DEPRESSION
+
+[1] 예측된 색상 RGB = (30, 38, 56) → 예측 감정: DARKNESS
+이 감정이 맞습니까? (Enter/yes/y/예 = 예, 아니면 원하는 감정 입력): 기존 예측 감정 유지, CSV에 추가하지 않습니다.
+
+[2] 예측된 색상 RGB = (142, 157, 154) → 예측 감정: BALANCE
+이 감정이 맞습니까? (Enter/yes/y/예 = 예, 아니면 원하는 감정 입력): Traceback (most recent call last):
+  File "/Users/acertainromance401/Desktop/SentiVision/test/main_.py", line 300, in <module>
+    main()
+  File "/Users/acertainromance401/Desktop/SentiVision/test/main_.py", line 276, in main
+    user_input = input("이 감정이 맞습니까? (Enter/yes/y/예 = 예, 아니면 원하는 감정 입력): ").strip()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+EOFError: EOF when reading a line

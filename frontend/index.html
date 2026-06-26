@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SentiVision Frontend</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-1: #f5f1e8;
+        --bg-2: #d9ecff;
+        --ink: #15222d;
+        --accent: #ff6b2c;
+        --accent-2: #0ea5a4;
+        --panel: rgba(255, 255, 255, 0.68);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        font-family: "Space Grotesk", sans-serif;
+        background:
+          radial-gradient(circle at 12% 12%, #ffe2d3 0%, transparent 30%),
+          radial-gradient(circle at 82% 18%, #c6f7f1 0%, transparent 26%),
+          linear-gradient(130deg, var(--bg-1), var(--bg-2));
+        overflow-x: hidden;
+      }
+
+      .grid-overlay {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.25;
+        background-image:
+          linear-gradient(to right, rgba(21, 34, 45, 0.08) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(21, 34, 45, 0.08) 1px, transparent 1px);
+        background-size: 28px 28px;
+      }
+
+      main {
+        position: relative;
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 48px 20px 80px;
+      }
+
+      .hero {
+        border: 1px solid rgba(21, 34, 45, 0.12);
+        background: var(--panel);
+        backdrop-filter: blur(8px);
+        border-radius: 24px;
+        padding: 36px;
+        box-shadow: 0 22px 40px rgba(20, 34, 50, 0.12);
+        transform: translateY(20px);
+        opacity: 0;
+        animation: rise 0.8s ease forwards;
+      }
+
+      .eyebrow {
+        font-family: "IBM Plex Mono", monospace;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #35556f;
+        font-size: 12px;
+      }
+
+      h1 {
+        margin: 10px 0 14px;
+        font-size: clamp(2rem, 5vw, 4rem);
+        line-height: 0.98;
+      }
+
+      h1 span {
+        color: var(--accent);
+      }
+
+      p {
+        margin: 0;
+        font-size: clamp(1rem, 2.3vw, 1.18rem);
+        line-height: 1.6;
+      }
+
+      .cards {
+        margin-top: 24px;
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
+
+      .card {
+        border: 1px solid rgba(21, 34, 45, 0.14);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.74);
+        padding: 14px;
+        transform: translateY(18px);
+        opacity: 0;
+        animation: rise 0.55s ease forwards;
+      }
+
+      .card:nth-child(1) {
+        animation-delay: 0.15s;
+      }
+
+      .card:nth-child(2) {
+        animation-delay: 0.25s;
+      }
+
+      .card:nth-child(3) {
+        animation-delay: 0.35s;
+      }
+
+      .chip {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #15222d;
+        color: #f8fbff;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 12px;
+      }
+
+      .actions {
+        margin-top: 28px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .analyze-panel {
+        margin-top: 24px;
+        border: 1px solid rgba(21, 34, 45, 0.14);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.78);
+        padding: 16px;
+      }
+
+      .analyze-panel h2 {
+        margin: 0 0 10px;
+        font-size: 1.1rem;
+      }
+
+      .analyze-panel p {
+        font-size: 0.95rem;
+        margin-bottom: 12px;
+      }
+
+      .swatches {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 10px;
+      }
+
+      .swatch {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .swatch input[type="color"] {
+        width: 48px;
+        height: 36px;
+        border: 0;
+        background: transparent;
+        padding: 0;
+      }
+
+      .analyze-result {
+        margin-top: 12px;
+        min-height: 48px;
+        border: 1px dashed rgba(21, 34, 45, 0.24);
+        border-radius: 10px;
+        padding: 10px;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 13px;
+        white-space: pre-wrap;
+      }
+
+      .btn {
+        text-decoration: none;
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: 1px solid rgba(21, 34, 45, 0.18);
+        font-weight: 700;
+      }
+
+      .btn.primary {
+        background: var(--accent);
+        color: #fff;
+        border-color: transparent;
+      }
+
+      .btn.secondary {
+        background: #ffffffbd;
+        color: var(--ink);
+      }
+
+      @keyframes rise {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 640px) {
+        main {
+          padding: 28px 14px 52px;
+        }
+
+        .hero {
+          padding: 22px;
+          border-radius: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="grid-overlay" aria-hidden="true"></div>
+    <main>
+      <section class="hero">
+        <div class="eyebrow">SentiVision / Frontend Delivery</div>
+        <h1>Color to <span>Emotion</span><br />in Real Time</h1>
+        <p>
+          이 페이지는 GitHub Pages 자동 배포와 PR 프리뷰 환경 검증을 위한 프런트 엔드입니다.
+          main 브랜치 병합 시 프로덕션 URL이 갱신되고, PR 생성 시 미리보기 URL이 자동 생성됩니다.
+        </p>
+
+        <div class="cards">
+          <article class="card">
+            <strong>Production Deploy</strong>
+            <p>main push -> gh-pages 배포</p>
+            <span class="chip">workflow: jekyll-gh-pages.yml</span>
+          </article>
+          <article class="card">
+            <strong>PR Preview</strong>
+            <p>PR opened/sync -> 독립 미리보기 URL</p>
+            <span class="chip">workflow: frontend-pr-preview.yml</span>
+          </article>
+          <article class="card">
+            <strong>Container Backend</strong>
+            <p>AWS ECS 배포 + health/monitoring</p>
+            <span class="chip">workflow: aws-ecs-deploy.yml</span>
+          </article>
+        </div>
+
+        <div class="actions">
+          <a class="btn primary" href="https://github.com/acertainromance401/SentiVision/actions">Actions 확인</a>
+          <a class="btn secondary" href="https://github.com/acertainromance401/SentiVision">Repository</a>
+        </div>
+
+        <section class="analyze-panel" aria-label="AI Analyze Demo">
+          <h2>Live AI Analyze Demo</h2>
+          <p>색 3개를 선택한 뒤 Analyze를 누르면 API가 감정 톤을 예측합니다.</p>
+
+          <div class="swatches">
+            <label class="swatch">Primary <input id="c1" type="color" value="#FF6B2C" /></label>
+            <label class="swatch">Secondary <input id="c2" type="color" value="#38BDF8" /></label>
+            <label class="swatch">Accent <input id="c3" type="color" value="#FCD34D" /></label>
+          </div>
+
+          <div class="actions">
+            <button id="analyzeBtn" class="btn primary" type="button">Analyze</button>
+          </div>
+          <div id="result" class="analyze-result">Waiting for input...</div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      async function runAnalyze() {
+        const colors = [
+          { hex: document.getElementById("c1").value, weight: 0.5 },
+          { hex: document.getElementById("c2").value, weight: 0.3 },
+          { hex: document.getElementById("c3").value, weight: 0.2 }
+        ];
+
+        const resultEl = document.getElementById("result");
+        resultEl.textContent = "Analyzing...";
+
+        try {
+          const response = await fetch("http://localhost:8080/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ colors })
+          });
+          const payload = await response.json();
+          if (!response.ok) {
+            throw new Error(payload.message || "Analyze failed");
+          }
+
+          resultEl.textContent = [
+            `emotion: ${payload.predictedEmotion}`,
+            `confidence: ${payload.confidence}`,
+            `score: ${payload.score}`,
+            `warmth/saturation/brightness: ${payload.features.warmth}/${payload.features.saturation}/${payload.features.brightness}`
+          ].join("\n");
+        } catch (error) {
+          resultEl.textContent = `error: ${error.message}`;
+        }
+      }
+
+      document.getElementById("analyzeBtn").addEventListener("click", runAnalyze);
+    </script>
+  </body>
+</html>

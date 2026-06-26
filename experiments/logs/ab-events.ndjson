@@ -1,0 +1,15 @@
+{"timestamp":"2026-05-28T06:49:36.171Z","type":"experiment_exposure","userId":"user-1001","experiment":"emotion-summary-layout","variant":"B","bucket":92,"consistent":true}
+{"timestamp":"2026-05-28T06:49:36.173Z","type":"experiment_exposure","userId":"user-1002","experiment":"emotion-summary-layout","variant":"A","bucket":44,"consistent":true}
+{"timestamp":"2026-05-28T06:49:36.173Z","type":"experiment_exposure","userId":"beta-designer-01","experiment":"emotion-summary-layout","variant":"B","bucket":74,"consistent":true}
+{"timestamp":"2026-05-28T06:49:36.173Z","type":"experiment_exposure","userId":"pro-artist-01","experiment":"emotion-summary-layout","variant":"B","bucket":97,"consistent":true}
+{"timestamp":"2026-05-28T06:49:36.173Z","type":"experiment_exposure","userId":"pilot-team-01","experiment":"emotion-summary-layout","variant":"A","bucket":3,"consistent":true}
+{"timestamp":"2026-05-28T06:49:51.554Z","type":"experiment_exposure","userId":"user-1001","experiment":"emotion-summary-layout","variant":"B","bucket":92,"consistent":true}
+{"timestamp":"2026-05-28T06:49:51.556Z","type":"experiment_exposure","userId":"user-1002","experiment":"emotion-summary-layout","variant":"A","bucket":44,"consistent":true}
+{"timestamp":"2026-05-28T06:49:51.556Z","type":"experiment_exposure","userId":"beta-designer-01","experiment":"emotion-summary-layout","variant":"B","bucket":74,"consistent":true}
+{"timestamp":"2026-05-28T06:49:51.556Z","type":"experiment_exposure","userId":"pro-artist-01","experiment":"emotion-summary-layout","variant":"B","bucket":97,"consistent":true}
+{"timestamp":"2026-05-28T06:49:51.556Z","type":"experiment_exposure","userId":"pilot-team-01","experiment":"emotion-summary-layout","variant":"A","bucket":3,"consistent":true}
+{"timestamp":"2026-05-28T06:50:22.635Z","type":"experiment_exposure","userId":"user-1001","experiment":"emotion-summary-layout","variant":"B","bucket":92,"consistent":true}
+{"timestamp":"2026-05-28T06:50:22.637Z","type":"experiment_exposure","userId":"user-1002","experiment":"emotion-summary-layout","variant":"A","bucket":44,"consistent":true}
+{"timestamp":"2026-05-28T06:50:22.637Z","type":"experiment_exposure","userId":"beta-designer-01","experiment":"emotion-summary-layout","variant":"B","bucket":74,"consistent":true}
+{"timestamp":"2026-05-28T06:50:22.638Z","type":"experiment_exposure","userId":"pro-artist-01","experiment":"emotion-summary-layout","variant":"B","bucket":97,"consistent":true}
+{"timestamp":"2026-05-28T06:50:22.638Z","type":"experiment_exposure","userId":"pilot-team-01","experiment":"emotion-summary-layout","variant":"A","bucket":3,"consistent":true}

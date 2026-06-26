@@ -1,0 +1,34 @@
+name: Auto Response (Draft)
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  auto-response:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Respond to new issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue_number = context.payload.issue.number;
+            const body = [
+              "감사합니다. 이슈를 접수했습니다.",
+              "",
+              "- 24시간 내 1차 확인",
+              "- 우선순위 라벨링 후 백로그 반영",
+              "",
+              "추가 로그/재현 절차를 댓글로 남겨주시면 처리 속도가 빨라집니다."
+            ].join("\n");
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              body
+            });

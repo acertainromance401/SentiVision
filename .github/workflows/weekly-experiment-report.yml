@@ -1,0 +1,77 @@
+name: Weekly Experiment Report
+
+on:
+  schedule:
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Generate persona feedback report
+        run: node experiments/user-research/generate_persona_feedback.js
+
+      - name: Generate A/B report
+        run: node experiments/ab-test/analyze_two_week_ab.js
+
+      - name: Build weekly summary
+        run: |
+          {
+            echo "# Weekly Experiment Summary"
+            echo
+            cat experiments/user-research/persona_feedback_report.md
+            echo
+            cat experiments/ab-test/ab_two_week_report.md
+            echo
+            cat docs/adr/0002-experiment-decision-persevere.md
+          } > docs/experiments/weekly-experiment-summary.md
+
+      - name: Upload summary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-experiment-summary
+          path: docs/experiments/weekly-experiment-summary.md
+
+      - name: Create or update experiment report issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const title = 'Weekly Experiment Summary';
+            const body = fs.readFileSync('docs/experiments/weekly-experiment-summary.md', 'utf8');
+            const { owner, repo } = context.repo;
+
+            const issues = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: 'open',
+              labels: 'experiment-report',
+              per_page: 100
+            });
+            const existing = issues.data.find(i => i.title === title);
+
+            if (existing) {
+              await github.rest.issues.update({ owner, repo, issue_number: existing.number, body });
+            } else {
+              await github.rest.issues.create({
+                owner,
+                repo,
+                title,
+                body,
+                labels: ['experiment-report']
+              });
+            }

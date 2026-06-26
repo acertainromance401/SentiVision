@@ -1,0 +1,42 @@
+[
+  {
+    "timestamp": "2026-05-28T06:49:37.577Z",
+    "stage": 1,
+    "health": {
+      "errorRate": 2.500285184234143,
+      "latencyP95": 419.09802397929
+    },
+    "healthy": true,
+    "action": "promote"
+  },
+  {
+    "timestamp": "2026-05-28T06:49:37.578Z",
+    "stage": 10,
+    "health": {
+      "errorRate": 3.9602516055696704,
+      "latencyP95": 302.6875084238721
+    },
+    "healthy": true,
+    "action": "promote"
+  },
+  {
+    "timestamp": "2026-05-28T06:49:37.578Z",
+    "stage": 50,
+    "health": {
+      "errorRate": 4.689853027223451,
+      "latencyP95": 795.5971510500914
+    },
+    "healthy": true,
+    "action": "promote"
+  },
+  {
+    "timestamp": "2026-05-28T06:49:37.578Z",
+    "stage": 100,
+    "health": {
+      "errorRate": 11.038373983443277,
+      "latencyP95": 948.4237912400363
+    },
+    "healthy": false,
+    "action": "rollback_to_50"
+  }
+]

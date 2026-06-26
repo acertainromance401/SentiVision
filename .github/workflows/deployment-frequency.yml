@@ -1,0 +1,43 @@
+name: DORA Deployment Frequency
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deployment-frequency:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Measure deployment frequency (proxy: pushes to main)"
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const now = new Date();
+            const since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+            const commits = await github.paginate(github.rest.repos.listCommits, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: 'main',
+              since: since.toISOString(),
+              per_page: 100,
+            });
+
+            const count = commits.length;
+            const perDay = (count / 7).toFixed(2);
+
+            core.summary
+              .addHeading('DORA: Deployment Frequency')
+              .addRaw('Proxy metric: number of pushes to main in last 7 days.\n\n')
+              .addTable([
+                [{data: 'Window', header: true}, {data: 'Last 7 days', header: false}],
+                [{data: 'Deployments', header: true}, {data: String(count), header: false}],
+                [{data: 'Deployments/day', header: true}, {data: String(perDay), header: false}],
+              ])
+              .write();

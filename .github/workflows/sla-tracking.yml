@@ -1,0 +1,54 @@
+name: SLA Tracking (Draft)
+
+on:
+  schedule:
+    - cron: "0 1 * * *" # daily 01:00 UTC
+  workflow_dispatch:
+
+permissions:
+  issues: read
+
+jobs:
+  sla-tracking:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check first-response SLA candidates
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const now = Date.now();
+            const SLA_HOURS = 24;
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            const candidates = issues
+              .filter(i => !i.pull_request)
+              .map(i => {
+                const created = new Date(i.created_at).getTime();
+                const ageHours = (now - created) / (1000 * 60 * 60);
+                return { number: i.number, title: i.title, ageHours };
+              })
+              .filter(i => i.ageHours > SLA_HOURS)
+              .sort((a, b) => b.ageHours - a.ageHours)
+              .slice(0, 20);
+
+            core.summary
+              .addHeading('SLA Tracking Report (Draft)')
+              .addRaw(`기준: 최초 응답 ${SLA_HOURS}시간 초과 후보\n\n`);
+
+            if (!candidates.length) {
+              core.summary.addRaw('초과 후보 없음\n');
+            } else {
+              for (const c of candidates) {
+                core.summary.addRaw(`- #${c.number} ${c.title} (${c.ageHours.toFixed(1)}h)\n`);
+              }
+            }
+
+            await core.summary.write();
