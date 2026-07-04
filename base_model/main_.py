@@ -17,7 +17,7 @@ import warnings
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(BASE_DIR, 'color_emotion_labeled_updated.csv')
+DATA_PATH = os.path.join(os.path.dirname(BASE_DIR), 'test', 'color_emotion_labeled_augmented.csv')
 OUTPUT_DIR = os.path.join(BASE_DIR, 'outputs')
 
 warnings.filterwarnings(

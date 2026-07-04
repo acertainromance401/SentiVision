@@ -32,7 +32,7 @@ import shutil
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(BASE_DIR, 'color_emotion_labeled_updated.csv')
+DATA_PATH = os.path.join(BASE_DIR, 'color_emotion_labeled_augmented.csv')
 OUTPUT_DIR = os.path.join(BASE_DIR, 'outputs')
 DATASET_VERSIONS_DIR = os.path.join(BASE_DIR, 'dataset_versions')
 FIXED_VALIDATION_PATH = os.path.join(BASE_DIR, 'fixed_validation_indices.json')

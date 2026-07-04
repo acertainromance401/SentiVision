@@ -27,7 +27,7 @@ from datetime import datetime
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(BASE_DIR, 'color_emotion_labeled_updated.csv')
+DATA_PATH = os.path.join(BASE_DIR, 'color_emotion_labeled_augmented.csv')
 OUTPUT_DIR = os.path.join(BASE_DIR, 'outputs')
 RUN_TAG = datetime.now().strftime('%Y%m%d_%H%M%S')
 OUTPUT_PREFIX = f'main_{RUN_TAG}'
@@ -37,6 +37,11 @@ PLOT_FILES = {
     'saliency': f'{OUTPUT_PREFIX}_saliency_maps.png',
     'dominant': f'{OUTPUT_PREFIX}_dominant_color_emotions.png',
 }
+
+# 연구용 baseline과 실제 그림 입력용 기준을 분리한다.
+# - baseline: 기존 Laplacian 현저성
+# - paint: 아이패드/디지털 페인팅처럼 "의도적으로 칠한 영역"에 더 가까운 추출
+PIXEL_EXTRACTION_MODE = 'paint'
 
 warnings.filterwarnings(
     "ignore",
@@ -68,6 +73,60 @@ def emotion_from_rgb(knn_model, r, g, b):
         columns=['R_norm', 'G_norm', 'B_norm']
     )
     return knn_model.predict(color_df)[0]
+
+
+def normalize_to_unit_interval(values):
+    values = values.astype(np.float32)
+    min_value = float(values.min())
+    max_value = float(values.max())
+    if max_value <= min_value:
+        return np.zeros_like(values, dtype=np.float32)
+    return (values - min_value) / (max_value - min_value)
+
+
+def build_laplacian_saliency(img_resized):
+    """연구용 baseline: Laplacian 기반 현저성 마스크를 만든다."""
+    gray = cv2.cvtColor(img_resized, cv2.COLOR_RGB2GRAY)
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    laplacian = cv2.Laplacian(blurred, cv2.CV_64F)
+    saliency_map = np.uint8(np.absolute(laplacian))
+    _, salient_mask = cv2.threshold(saliency_map, 10, 255, cv2.THRESH_BINARY)
+    salient_pixels = img_resized[salient_mask == 255].reshape(-1, 3)
+    return saliency_map, salient_mask, salient_pixels
+
+
+def build_paint_region_saliency(img_resized):
+    """실전용 기준: 채도, 경계 밀도, 중심성을 합친 그림 영역 마스크를 만든다."""
+    hsv = cv2.cvtColor(img_resized, cv2.COLOR_RGB2HSV)
+    saturation = hsv[:, :, 1].astype(np.float32) / 255.0
+
+    gray = cv2.cvtColor(img_resized, cv2.COLOR_RGB2GRAY)
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    edge_strength = np.abs(cv2.Laplacian(blurred, cv2.CV_64F))
+    edge_strength = normalize_to_unit_interval(edge_strength)
+
+    height, width = gray.shape
+    yy, xx = np.mgrid[0:height, 0:width]
+    center_x = (width - 1) / 2.0
+    center_y = (height - 1) / 2.0
+    center_distance = np.sqrt((xx - center_x) ** 2 + (yy - center_y) ** 2)
+    centrality = 1.0 - (center_distance / center_distance.max())
+    centrality = np.clip(centrality, 0.0, 1.0).astype(np.float32)
+
+    # 그림에서는 "눈에 띄는 경계"보다 "의도적으로 칠한 영역"이 더 중요하므로
+    # 채도와 중심성에 조금 더 비중을 둔다.
+    paint_score = (0.45 * saturation) + (0.30 * edge_strength) + (0.25 * centrality)
+    paint_score = normalize_to_unit_interval(paint_score)
+
+    threshold = float(np.percentile(paint_score, 68))
+    salient_mask = np.uint8(paint_score >= threshold) * 255
+
+    kernel = np.ones((3, 3), np.uint8)
+    salient_mask = cv2.morphologyEx(salient_mask, cv2.MORPH_CLOSE, kernel)
+    salient_mask = cv2.morphologyEx(salient_mask, cv2.MORPH_OPEN, kernel)
+
+    salient_pixels = img_resized[salient_mask == 255].reshape(-1, 3)
+    return np.uint8(paint_score * 255), salient_mask, salient_pixels
 
 
 TYPO_LABEL_MAP = {
@@ -204,16 +263,13 @@ def main():
     img_resized = cv2.resize(img, (100, 100))
 
     # 7) 현저성(saliency) 계산
-    #    Laplacian 기반으로 경계/변화가 큰 영역을 현저 영역으로 간주
-    gray = cv2.cvtColor(img_resized, cv2.COLOR_RGB2GRAY)
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-    laplacian = cv2.Laplacian(blurred, cv2.CV_64F)
-    saliencyMap = np.uint8(np.absolute(laplacian))
-    # 임계값 이진화로 salient mask 생성
-    _, salient_mask = cv2.threshold(saliencyMap, 10, 255, cv2.THRESH_BINARY)
-
-    # 마스크가 255인 픽셀만 추출하여 색상 군집화 대상으로 사용
-    salient_pixels = img_resized[salient_mask == 255].reshape(-1, 3)
+    #    연구용 baseline은 Laplacian, 실전 기준은 그림에서 실제로 칠해진 영역에 더 가깝게 추출
+    if PIXEL_EXTRACTION_MODE == 'baseline_laplacian':
+        saliencyMap, salient_mask, salient_pixels = build_laplacian_saliency(img_resized)
+        extraction_label = 'saliency'
+    else:
+        saliencyMap, salient_mask, salient_pixels = build_paint_region_saliency(img_resized)
+        extraction_label = 'paint'
 
     if len(salient_pixels) == 0:
         print("현저한 영역이 감지되지 않았습니다.")
@@ -237,7 +293,7 @@ def main():
     dominant_colors = kmeans.cluster_centers_
 
     # 9) 추출 색상별 감정 예측 결과 출력
-    print("\n[saliency] Extracted Color-Emotions:")
+    print(f"\n[{extraction_label}] Extracted Color-Emotions:")
     for i, color in enumerate(dominant_colors):
         r, g, b = color
         predicted_emotion = emotion_from_rgb(knn, r, g, b)
