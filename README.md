@@ -91,6 +91,7 @@ SentiVision은 개인 창작 사용자가 마음껏 그림을 그리고, 그 과
 ## Project Descriptions
 
 - Project_Descriptions/Development_Process_and_Tools_Proposal.md
+- Project_Descriptions/Implementation_Mindmap_SentiVision.md
 - Project_Descriptions/PRD_SentiVision.md
 - Project_Descriptions/Project_Description.md
 - Project_Descriptions/User_Journey_Scenario_SentiVision.md
