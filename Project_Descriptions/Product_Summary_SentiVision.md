@@ -51,7 +51,9 @@ SentiVision은 사용자가 그림을 그리고 색을 고른 뒤, 그 결과를
 ## 6. 현재 구현 상태
 - Python CLI 분석 파이프라인 운영 중
 - KNN/KMeans 기반 색상-감정 검증 가능
+- 그림 입력용 연구 스크립트에서 `baseline_laplacian`, `paint_region`, `paint_region_conservative` 비교 가능
 - 시각화 PNG 및 CSV 보정 루프 존재
+- 보강본 CSV(`test/color_emotion_labeled_augmented.csv`)를 기준 데이터로 사용
 - 앱/API 설계 문서 정리 완료
 
 ## 7. 참고 문서

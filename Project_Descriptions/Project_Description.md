@@ -18,6 +18,8 @@ SentiVision은 사용자가 마음껏 그림을 그린 다음, 그 과정에서 
 결과는 예측값처럼 제시하지 않고, 작품 옆 해설문처럼 조용하고 사유적인 방식으로 보여준다.
 
 현재 저장소에는 Python CLI 분석 파이프라인이 구현되어 있으며, 이 파이프라인은 앱/API 개발을 검증하고 색상-감정 맵핑 정확도를 다듬는 기준 엔진으로 유지한다.
+최근 연구 기준에서는 원본 baseline과 별도로 `paint_region` 계열의 그림 중심 추출 로직을 실험하고 있으며,
+보강본 CSV(`test/color_emotion_labeled_augmented.csv`)를 현재 검증 기준으로 사용한다.
 향후에는 iPhone에서 작품만 감상하는 동반 앱을 추가해, 제작 경험과 감상 경험을 분리하는 방향도 고려한다.
 이 iPhone 동반 앱은 무료 감상용으로 제공하고, 작품을 직접 그리는 iPad 유료 앱으로 자연스럽게 이어지도록 하는 진입점 역할을 하게 한다.
 
@@ -72,8 +74,9 @@ SentiVision은 사용자가 마음껏 그림을 그린 다음, 그 과정에서 
 ### 2-3. 분석/데이터 레이어 (현행 자산)
 - `test/main_.py` 기반 분석 로직 (개선 버전)
 - `test/test_model_comparison.py` 기반 모델 성능 비교 로직
+- `test/research_compare_extraction.py` 기반 baseline/paint_region 비교 로직
 - `test/run_all_analysis.py` 기반 일괄 실행 로직
-- `test/color_emotion_labeled_updated.csv` 기반 학습/예측
+- `test/color_emotion_labeled_augmented.csv` 기반 학습/예측
 - 시각화 산출물 및 데이터셋 갱신
 
 ### 2-4. 베이스라인 (원본 비교용)

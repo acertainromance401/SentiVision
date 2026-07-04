@@ -59,13 +59,15 @@
 ### 5. 분석 엔진/데이터 파이프라인
 5.1 KNN 학습/예측 로직 유지  
 5.2 현저성 + KMeans 주요색 추출 유지  
-5.3 데이터 정규화/오탈자 매핑 정책 적용  
-5.4 결측/중복 처리 정책 반영  
-5.5 모델 비교 파이프라인(KNN vs RandomForest) 운영
+5.3 그림 중심 `paint_region` 연구 로직 비교/검증  
+5.4 데이터 정규화/오탈자 매핑 정책 적용  
+5.5 결측/중복 처리 정책 반영  
+5.6 모델 비교 파이프라인(KNN vs RandomForest) 운영
 
 산출물
 - `test/main_.py`
 - `test/test_model_comparison.py`
+- `test/research_compare_extraction.py`
 - `test/run_all_analysis.py`
 - 데이터 품질 리포트
 
@@ -74,10 +76,11 @@
 ### 6. 피드백 루프
 6.1 앱 피드백 수집/저장  
 6.2 CSV 반영 규칙 적용  
-6.3 품질 개선 로그 기록
+6.3 사용자 개인화 가중치/감정-색 매핑 실험 계획  
+6.4 품질 개선 로그 기록
 
 산출물
-- `test/color_emotion_labeled_updated.csv`
+- `test/color_emotion_labeled_augmented.csv`
 - 피드백 처리 로그
 
 ---

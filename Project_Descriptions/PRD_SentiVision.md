@@ -230,3 +230,8 @@ HARMONY,29,153,15,GREEN,14.0
 TRANQUILITY,132,206,235,SKY BLUE,38.0
 CALMNESS,131,211,229,SKY BLUE,59.0
 ```
+
+### 12.6 현재 검증 기준(보강본)
+- 운영 중 CLI 검증과 연구 비교는 `test/color_emotion_labeled_augmented.csv`를 기준으로 한다.
+- 연구용 비교 스크립트는 `baseline_laplacian`, `paint_region`, `paint_region_conservative`를 비교한다.
+- 제품화 단계에서는 사용자 온보딩에서 감정 단어를 먼저 제시하고, 그에 맞는 색 선택을 통해 개인화 기준을 저장하는 방향을 우선 검토한다.
