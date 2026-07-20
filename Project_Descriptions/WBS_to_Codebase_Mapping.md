@@ -13,7 +13,7 @@
 | **2. 요구사항/문서 정합화** | `Project_Descriptions` 세트 (PRD/UserJourney/Wireframe/ScreenFlow) | `Project_Descriptions/*.md` | 완료 (2026-03-25) | 문제 정의 정렬 상태 주간 점검 |
 | **3. 캔버스 UX 설계** | 와이어프레임, 화면 흐름도 | `Project_Descriptions/Wireframe_SentiVision.md` | 완료 (설계 단계) | SwiftUI 프로토타입 구현 필요 |
 | **3-1. iPhone 감상 앱** | 동반 앱 아키텍처, 감상 전용 화면 | `Project_Descriptions/Wireframe_SentiVision.md` | 미시작 | 무료 감상 앱 구조 정의 |
-| **4. API 설계/구현** | API 명세, FastAPI 코드 | 설계만 완료 / 구현 미작 | 설계 단계 | FastAPI 프로젝트 생성 + 4.1~4.4 구현 |
+| **4. 분석 연동/계약** | 분석/피드백 계약, 상태 확인 규칙 | 설계만 완료 / 구현 미작 | 설계 단계 | 계약 정리 + 앱 연동 지점 확정 |
 | **5. 분석 엔진/데이터 파이프라인** | KNN/KMeans 로직, 데이터 품질 리포트 | `test/main_.py`, `test/test_model_comparison.py` | 진행 중 (CLI) | 엔진 모듈화 + API 연동 + 학습 파이프라인 |
 | **6. 피드백 루프** | CSV 업데이트, 피드백 처리 로그 | `test/main_.py`, `test/outputs/comparison_user_feedback.csv` | 진행 중 (CLI) | 앱 피드백 수집 UI + API 엔드포인트 |
 | **7. 시각화/리포팅** | RGB 3D, Saliency, 감정-색상 차트, 성능 대시보드 | `test/outputs/` | 완료 (타임스탬프 PNG 생성) | 앱 내 시각화 UI 통합 필요 |
@@ -43,20 +43,20 @@
 
 ---
 
-### WBS 4 — API 설계/구현
+### WBS 4 — 분석 연동/계약
 
-#### 목표: FastAPI 구현
+#### 목표: 분석/피드백 계약 명세
 
 | 엔드포인트 | 메서드 | 입력 | 출력 | 현재 상태 | 매핑소스 |
 |---------|--------|------|------|---------|---------|
-| `/health` | GET | 없음 | `{"status": "ok"}` | 미작 | 기본 헬스체크 |
-| `/analyze` | POST | `image`(필수), `weights?`(선택) | `predicted_emotion, confidence_scores, representative_palette` | 미작 | WBS 4.1, FR-2, FR-5 (현저성->KMeans->KNN) |
-| `/feedback` | POST | `predicted_emotion, corrected_emotion, palette, note?` | `{"feedback_id": "uuid", "status": "saved"}` | 미작 | WBS 4.2, FR-3, CSV 쓰기 로직 |
+| 분석 계약 | 계약 | 입력/출력 규격 | 개인 분포 우선 해석 | 미작 | WBS 4.1, FR-2, FR-4 |
+| 피드백 계약 | 계약 | 정정 감정/메모/팔레트 | 개인 분포 보정 반영 | 미작 | WBS 4.2, FR-3 |
+| 상태 확인 | 계약 | 연결 확인 | 운영 상태 점검 | 미작 | WBS 4.3 |
 
 **구현 계획**:
-- `main.py` (FastAPI 앱 초기화)
+- `main.py` (계약/연동 진입점)
 - `models.py` (Pydantic 스키마 정의)
-- `routes/analyze.py` (분석 엔드포인트, `emotion_from_rgb()` 호출)
+- `routes/analyze.py` (분석 연동, `emotion_from_rgb()` 호출)
 - `routes/feedback.py` (피드백 저장, CSV 업데이트)
 - `config.py` (환경변수, 모델 경로, 데이터셋 경로)
 
@@ -69,6 +69,7 @@
 | 화면 | 정의 | 필요 SwiftUI 컴포넌트 | 의존성 | 상태 |
 |------|------|---------|--------|------|
 | HomePage | 환영 메시지 + 최근 7일 분석수 + "새 작품 시작" | List, Card, Button | WBS 6 (아카이브 데이터) | 설계 완료 |
+| SetupView | 초기 세팅(기준 색상/기준 감정/체감 조절) | Form, Picker, Slider, Button | WBS 2, WBS 6 | 현재 앱 반영 |
 | CanvasView | 그리기 영역 + 다중 색상 선택(색상휠/HEX/RGB/스포이트) + 팔레트 하단 표시 | Canvas, @State palette, ColorPicker, TextField, Slider | iOS 14+ Canvas API | 설계 완료 |
 | AnalysisLoading | 단계형 로딩 메시지 | ProgressView, Text | WBS 5 (API 응답) | 설계 완료 |
 | ResultCard | 감정 제목 + 해석 문장 + 점수 + 색상 스와치 | VStack, Rectangle (color) | WBS 5 (API 응답) | 설계 완료 |
@@ -83,8 +84,8 @@
 | ArtworkDetail | 작품 + 감정 제목 + 해석문 감상 | VStack, Image, Text | WBS 6 (아카이브 데이터) | 미시작 |
 
 **구현 계획**:
-- 프로토타입: 단계 1 = HomePage + CanvasView (터치 감지, 색상 추출)
-- 단계 2 = API 연동 (AnalysisLoading → ResultCard)
+- 프로토타입: 단계 1 = SetupView + HomePage + CanvasView
+- 단계 2 = 계약/연동 (AnalysisLoading → ResultCard)
 - 단계 3 = 피드백 (FeedbackForm)
 
 ---
@@ -102,7 +103,7 @@
 │  • 캔버스 UX 설계 (WBS 3) ─────┐     │
 │  • 분석 엔진 모듈화 (WBS 5) ─┐ │    │
 │  • 피드백 루프 설계 (WBS 6) ──┼──┐  │
-│  • API 설계/구현 (WBS 4) ←····┤ │  │
+│  • 분석 연동/계약 (WBS 4) ←····┤ │  │
 └───────────────────────────│──┼──┘  │
         ↓                    ↓  ↓      │
     시각화 (WBS 7) ──────────┘  └─────┘
@@ -114,7 +115,7 @@
 
 **핵심 크리티컬 패스**:
 1. WBS 2 (문서) — 완료
-2. WBS 5 (분석 엔진 모듈화) + WBS 4 (API 구현) — 병렬
+2. WBS 5 (분석 엔진 모듈화) + WBS 4 (분석 연동/계약) — 병렬
 3. WBS 3 (캔버스 UX) + WBS 6 (피드백)
 4. WBS 7 (시각화 통합) → WBS 8 (테스트) → WBS 9 (배포)
 
@@ -266,7 +267,7 @@ sentipy/
 | 문서 정합화 | ✅ 완료 | 사료됨 |
 | CLI 검증 엔진 | ✅ 완료 | 지속 유지 |
 | API 설계 | ✅ 완료 | 사료됨 |
-| API 구현 | ⏳ 미시작 | 2~3주 |
+| 분석 연동 | ⏳ 미시작 | 2~3주 |
 | 캔버스 UX 설계 | ✅ 완료 | 사료됨 |
 | 캔버스 구현 | ⏳ 미시작 | 2~3주 |
 | 피드백 로직 | 🔄 부분 완료 (CLI만) | 1~2주 |
