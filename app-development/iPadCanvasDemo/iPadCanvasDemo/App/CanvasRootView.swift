@@ -5,6 +5,7 @@ struct CanvasRootView: View {
     private enum Tab: Hashable {
         case distribution
         case canvas
+        case archive
     }
 
     private enum ToolMode: String, CaseIterable {
@@ -28,6 +29,9 @@ struct CanvasRootView: View {
     @State private var toolMode: ToolMode = .pen
     @State private var activeTab: Tab = .distribution
     @State private var showingSetup = false
+    @State private var currentAnalysis: EmotionAnalysisResult?
+    @State private var archiveEntries: [EmotionArchiveEntry] = EmotionArchiveStore.load()
+    @State private var analysisErrorMessage: String?
 
     var body: some View {
         Group {
@@ -45,6 +49,16 @@ struct CanvasRootView: View {
                 setupCompleted = true
             }
         }
+        .alert("분석할 수 없습니다", isPresented: Binding(
+            get: { analysisErrorMessage != nil },
+            set: { if !$0 { analysisErrorMessage = nil } }
+        )) {
+            Button("확인", role: .cancel) {
+                analysisErrorMessage = nil
+            }
+        } message: {
+            Text(analysisErrorMessage ?? "캔버스에 최소한 하나의 선을 그려주세요.")
+        }
     }
 
     private var mainContent: some View {
@@ -52,9 +66,15 @@ struct CanvasRootView: View {
             profileBanner
 
             TabView(selection: $activeTab) {
-                EmotionDistributionView()
+                EmotionDistributionView(
+                    analysisResult: currentAnalysis,
+                    onSaveToArchive: saveCurrentAnalysis,
+                    onStartNewArtwork: {
+                        activeTab = .canvas
+                    }
+                )
                     .tabItem {
-                        Label("3D Graph", systemImage: "cube.transparent")
+                        Label("Analysis", systemImage: "sparkles")
                     }
                     .tag(Tab.distribution)
 
@@ -106,6 +126,15 @@ struct CanvasRootView: View {
                     Label("Canvas", systemImage: "pencil.and.outline")
                 }
                 .tag(Tab.canvas)
+
+                EmotionArchiveView(entries: archiveEntries, onSelect: { entry in
+                    currentAnalysis = entry.analysis
+                    activeTab = .distribution
+                })
+                .tabItem {
+                    Label("Archive", systemImage: "tray.full")
+                }
+                .tag(Tab.archive)
             }
         }
     }
@@ -142,9 +171,26 @@ struct CanvasRootView: View {
             paletteHeader
             colorPalette
             strokeWidthControl
+            actionButtons
         }
         .padding(16)
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+
+    private var actionButtons: some View {
+        HStack(spacing: 8) {
+            Button("Analyze Artwork") {
+                analyzeArtwork()
+            }
+            .buttonStyle(.borderedProminent)
+
+            Button("Archive") {
+                activeTab = .archive
+            }
+            .buttonStyle(.bordered)
+
+            Spacer(minLength: 0)
+        }
     }
 
     private var toolButtons: some View {
@@ -204,5 +250,34 @@ struct CanvasRootView: View {
             }
             Slider(value: $strokeWidth, in: 2...24, step: 1)
         }
+    }
+
+    private func analyzeArtwork() {
+        guard let analysis = LocalEmotionAnalysisService.shared.analyze(
+            drawing: drawing,
+            baselineEmotion: baselineEmotion,
+            baselineColorHex: baselineColorHex
+        ) else {
+            analysisErrorMessage = "캔버스에 그려진 내용이 없어 분석할 수 없습니다."
+            return
+        }
+
+        currentAnalysis = analysis
+        activeTab = .distribution
+    }
+
+    private func saveCurrentAnalysis() {
+        guard let analysis = currentAnalysis else { return }
+
+        let entry = EmotionArchiveEntry(
+            id: UUID(),
+            createdAt: Date(),
+            analysis: analysis,
+            note: ""
+        )
+
+        archiveEntries.insert(entry, at: 0)
+        EmotionArchiveStore.save(archiveEntries)
+        activeTab = .archive
     }
 }

@@ -12,6 +12,8 @@
 	A1B2C3D4E5F60123456789AD /* DrawingCanvasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789B2 /* DrawingCanvasView.swift */; };
 	A1B2C3D4E5F60123456789D0 /* EmotionDistributionSceneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789D2 /* EmotionDistributionSceneView.swift */; };
 	A1B2C3D4E5F60123456789E0 /* InitialSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789E2 /* InitialSetupView.swift */; };
+	A1B2C3D4E5F60123456789F0 /* LocalEmotionAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789F3 /* LocalEmotionAnalysisService.swift */; };
+	A1B2C3D4E5F60123456789F1 /* EmotionArchiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789F4 /* EmotionArchiveView.swift */; };
 	A1B2C3D4E5F60123456789D1 /* color_emotion_labeled_augmented.csv in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789D3 /* color_emotion_labeled_augmented.csv */; };
 /* End PBXBuildFile section */
 
@@ -22,6 +24,8 @@
 	A1B2C3D4E5F60123456789B2 /* DrawingCanvasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/DrawingCanvasView.swift; sourceTree = "<group>"; };
 	A1B2C3D4E5F60123456789D2 /* EmotionDistributionSceneView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/EmotionDistributionSceneView.swift; sourceTree = "<group>"; };
 	A1B2C3D4E5F60123456789E2 /* InitialSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/InitialSetupView.swift; sourceTree = "<group>"; };
+	A1B2C3D4E5F60123456789F3 /* LocalEmotionAnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/LocalEmotionAnalysisService.swift; sourceTree = "<group>"; };
+	A1B2C3D4E5F60123456789F4 /* EmotionArchiveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/EmotionArchiveView.swift; sourceTree = "<group>"; };
 	A1B2C3D4E5F60123456789D3 /* color_emotion_labeled_augmented.csv */ = {isa = PBXFileReference; lastKnownFileType = text; path = Data/color_emotion_labeled_augmented.csv; sourceTree = "<group>"; };
 	A1B2C3D4E5F60123456789B4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -38,6 +42,8 @@
 		A1B2C3D4E5F60123456789B2 /* DrawingCanvasView.swift */,
 		A1B2C3D4E5F60123456789D2 /* EmotionDistributionSceneView.swift */,
 		A1B2C3D4E5F60123456789E2 /* InitialSetupView.swift */,
+		A1B2C3D4E5F60123456789F3 /* LocalEmotionAnalysisService.swift */,
+		A1B2C3D4E5F60123456789F4 /* EmotionArchiveView.swift */,
 		A1B2C3D4E5F60123456789D3 /* color_emotion_labeled_augmented.csv */,
 	); path = iPadCanvasDemo; sourceTree = "<group>"; };
 	A1B2C3D4E5F60123456789B7 /* Products */ = {isa = PBXGroup; children = (
@@ -79,6 +85,8 @@
 		A1B2C3D4E5F60123456789AD /* DrawingCanvasView.swift in Sources */,
 		A1B2C3D4E5F60123456789D0 /* EmotionDistributionSceneView.swift in Sources */,
 		A1B2C3D4E5F60123456789E0 /* InitialSetupView.swift in Sources */,
+		A1B2C3D4E5F60123456789F0 /* LocalEmotionAnalysisService.swift in Sources */,
+		A1B2C3D4E5F60123456789F1 /* EmotionArchiveView.swift in Sources */,
 	); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 

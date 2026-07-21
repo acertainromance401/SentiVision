@@ -84,6 +84,9 @@ enum EmotionDistributionDataStore {
 struct EmotionDistributionView: View {
     private let points = EmotionDistributionDataStore.loadBundledPoints()
     private let displayLimit = 120
+    let analysisResult: EmotionAnalysisResult?
+    let onSaveToArchive: (() -> Void)?
+    let onStartNewArtwork: (() -> Void)?
     @State private var selectedPoint: EmotionDistributionPoint?
     @State private var resetViewToken = UUID()
 
@@ -108,6 +111,11 @@ struct EmotionDistributionView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 header
+
+                if let analysisResult {
+                    analysisCard(analysisResult)
+                }
+
                 ZStack(alignment: .topTrailing) {
                     EmotionDistributionSceneView(points: displayedPoints, selectedPoint: $selectedPoint, resetTrigger: resetViewToken)
                         .frame(height: 560)
@@ -205,6 +213,96 @@ struct EmotionDistributionView: View {
             summaryChip(title: "Emotions", value: "\(uniqueEmotionCount)")
             summaryChip(title: "Top", value: topEmotionSummary)
         }
+    }
+
+    private func analysisCard(_ result: EmotionAnalysisResult) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Latest Analysis")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(result.predictedEmotion)
+                        .font(.title2.bold())
+                    Text(result.interpretation)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Text("\(Int(result.confidence * 100))%")
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text(result.summary)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                HStack(spacing: 8) {
+                    ForEach(result.dominantColors.prefix(3)) { color in
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(color.color)
+                            .frame(width: 48, height: 26)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .strokeBorder(.secondary.opacity(0.12), lineWidth: 1)
+                            )
+                    }
+                }
+            }
+
+            if !result.scores.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Confidence Scores")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    ForEach(result.scores.prefix(4)) { score in
+                        HStack {
+                            Text(score.emotion)
+                                .font(.caption)
+                                .frame(width: 100, alignment: .leading)
+                            GeometryReader { proxy in
+                                RoundedRectangle(cornerRadius: 999, style: .continuous)
+                                    .fill(Color.accentColor.opacity(0.18))
+                                    .overlay(alignment: .leading) {
+                                        RoundedRectangle(cornerRadius: 999, style: .continuous)
+                                            .fill(Color.accentColor)
+                                            .frame(width: proxy.size.width * max(0.05, score.confidence))
+                                    }
+                            }
+                            .frame(height: 10)
+                            Text("\(Int(score.confidence * 100))%")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .frame(width: 42, alignment: .trailing)
+                        }
+                    }
+                }
+            }
+
+            HStack(spacing: 8) {
+                Button {
+                    onSaveToArchive?()
+                } label: {
+                    Label("Save to Archive", systemImage: "tray.full")
+                }
+                .buttonStyle(.borderedProminent)
+
+                Button {
+                    onStartNewArtwork?()
+                } label: {
+                    Label("Back to Canvas", systemImage: "pencil.and.outline")
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private func summaryChip(title: String, value: String) -> some View {
