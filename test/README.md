@@ -27,6 +27,10 @@
 - 3샘플 이상 83개
 - RGB 충돌 0개
 
+추가 분석 스크립트:
+
+- `test/personalized_palette_model.py`: 앵커 색상/감정 기반 개인화 팔레트 분석 실험 스크립트
+
 ## 현재 폴더 구조
 
 ```text
