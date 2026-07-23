@@ -29,6 +29,12 @@ struct EmotionDistributionPoint: Identifiable {
     }
 }
 
+struct EmotionFamilyMembership {
+    let family: String
+    let role: String
+    let weight: Float
+}
+
 enum EmotionDistributionDataStore {
     static func loadBundledPoints() -> [EmotionDistributionPoint] {
         guard let url = Bundle.main.url(forResource: "color_emotion_labeled_augmented", withExtension: "csv") else {
@@ -54,7 +60,7 @@ enum EmotionDistributionDataStore {
             guard parts.count >= 6 else { return nil }
             guard let red = Int(parts[1]), let green = Int(parts[2]), let blue = Int(parts[3]) else { return nil }
 
-            let emotion = parts[0].trimmingCharacters(in: .whitespacesAndNewlines)
+            let emotion = parts[0].trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
             let colorName = parts[4].trimmingCharacters(in: .whitespacesAndNewlines)
             let colorLabel = parts[5].trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -79,10 +85,58 @@ enum EmotionDistributionDataStore {
             EmotionDistributionPoint(emotion: "DEPRESSION", red: 84, green: 82, blue: 75, colorName: nil, colorLabel: nil)
         ]
     }
+
+    static func loadEmotionFamilyMemberships() -> [String: [EmotionFamilyMembership]] {
+        guard let url = Bundle.main.url(forResource: "emotion_family_classification", withExtension: "csv") else {
+            print("❌ emotion_family_classification.csv not found in Bundle")
+            return [:]
+        }
+
+        do {
+            let content = try String(contentsOf: url, encoding: .utf8)
+            let result = parseEmotionFamilyCSV(content)
+            print("✓ Loaded emotion family memberships: \(result.count) emotions")
+            return result
+        } catch {
+            print("❌ Error loading emotion_family_classification.csv: \(error)")
+            return [:]
+        }
+    }
+
+    private static func parseEmotionFamilyCSV(_ csv: String) -> [String: [EmotionFamilyMembership]] {
+        let lines = csv.split(whereSeparator: \.isNewline).map(String.init)
+        guard lines.count > 1 else {
+            print("❌ emotion_family_classification CSV has no data lines")
+            return [:]
+        }
+
+        var mapping: [String: [EmotionFamilyMembership]] = [:]
+
+        for line in lines.dropFirst() {
+            let parts = line.split(separator: ",", omittingEmptySubsequences: false).map(String.init)
+            guard parts.count >= 4 else { continue }
+
+            let emotion = parts[0].trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+            let family = parts[1].trimmingCharacters(in: .whitespacesAndNewlines)
+            let role = parts[2].trimmingCharacters(in: .whitespacesAndNewlines)
+            let weight = Float(parts[3].trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0.5
+
+            guard !emotion.isEmpty, !family.isEmpty else { continue }
+            mapping[emotion, default: []].append(
+                EmotionFamilyMembership(family: family, role: role, weight: max(0.1, min(1.0, weight)))
+            )
+        }
+
+        print("✓ Parsed emotion family CSV: \(mapping.count) emotions loaded")
+        let sampleEmotions = Array(mapping.keys).prefix(5)
+        print("  Sample emotions: \(sampleEmotions.joined(separator: ", "))")
+        return mapping
+    }
 }
 
 struct EmotionDistributionView: View {
     private let points = EmotionDistributionDataStore.loadBundledPoints()
+    private let emotionFamilyMemberships = EmotionDistributionDataStore.loadEmotionFamilyMemberships()
     private let displayLimit = 120
     let analysisResult: EmotionAnalysisResult?
     let onSaveToArchive: (() -> Void)?
@@ -117,7 +171,12 @@ struct EmotionDistributionView: View {
                 }
 
                 ZStack(alignment: .topTrailing) {
-                    EmotionDistributionSceneView(points: displayedPoints, selectedPoint: $selectedPoint, resetTrigger: resetViewToken)
+                    EmotionDistributionSceneView(
+                        points: displayedPoints,
+                        emotionFamilyMemberships: emotionFamilyMemberships,
+                        selectedPoint: $selectedPoint,
+                        resetTrigger: resetViewToken
+                    )
                         .frame(height: 560)
                         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                         .overlay(
@@ -144,7 +203,7 @@ struct EmotionDistributionView: View {
                 }
 
                 infoRow
-                Text("RGB 축 위에서 개인 분포를 먼저 보고, 탭한 점의 감정-색 정보를 바로 확인할 수 있습니다.")
+                    Text("RGB 공간에서 개인 분포를 먼저 보고, 탭한 점의 감정-색 정보를 바로 확인할 수 있습니다.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -284,6 +343,31 @@ struct EmotionDistributionView: View {
                 }
             }
 
+            if let emotionFamilies = result.emotionFamilies, !emotionFamilies.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Emotion Families")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(emotionFamilies.prefix(4)) { family in
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(family.family)
+                                        .font(.caption.weight(.semibold))
+                                    Text("\(Int(family.confidence * 100))%")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 8)
+                                .background(Color.accentColor.opacity(0.10), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            }
+                        }
+                    }
+                }
+            }
+
             HStack(spacing: 8) {
                 Button {
                     onSaveToArchive?()
@@ -323,6 +407,7 @@ struct EmotionDistributionView: View {
 
 struct EmotionDistributionSceneView: UIViewRepresentable {
     let points: [EmotionDistributionPoint]
+    let emotionFamilyMemberships: [String: [EmotionFamilyMembership]]
     @Binding var selectedPoint: EmotionDistributionPoint?
     let resetTrigger: UUID
 
@@ -334,7 +419,7 @@ struct EmotionDistributionSceneView: UIViewRepresentable {
         view.antialiasingMode = .multisampling4X
         view.isPlaying = true
         view.preferredFramesPerSecond = 60
-        let scene = EmotionDistributionSceneBuilder(points: points).makeScene()
+        let scene = EmotionDistributionSceneBuilder(points: points, emotionFamilyMemberships: emotionFamilyMemberships).makeScene()
         view.scene = scene
         context.coordinator.attach(to: view, points: points, selectedPoint: $selectedPoint)
         context.coordinator.lastResetTrigger = resetTrigger
@@ -353,7 +438,7 @@ struct EmotionDistributionSceneView: UIViewRepresentable {
             context.coordinator.resetCamera(on: uiView)
         }
         if uiView.scene == nil {
-            uiView.scene = EmotionDistributionSceneBuilder(points: points).makeScene()
+            uiView.scene = EmotionDistributionSceneBuilder(points: points, emotionFamilyMemberships: emotionFamilyMemberships).makeScene()
         }
     }
 
@@ -405,9 +490,11 @@ struct EmotionDistributionSceneView: UIViewRepresentable {
 
 final class EmotionDistributionSceneBuilder {
     private let points: [EmotionDistributionPoint]
+    private let emotionFamilyMemberships: [String: [EmotionFamilyMembership]]
 
-    init(points: [EmotionDistributionPoint]) {
+    init(points: [EmotionDistributionPoint], emotionFamilyMemberships: [String: [EmotionFamilyMembership]]) {
         self.points = points
+        self.emotionFamilyMemberships = emotionFamilyMemberships
     }
 
     func makeScene() -> SCNScene {
@@ -418,9 +505,8 @@ final class EmotionDistributionSceneBuilder {
         scene.rootNode.addChildNode(rootNode)
 
         addLights(to: rootNode)
-        addAxes(to: rootNode)
-        addGrid(to: rootNode)
         addPoints(to: rootNode)
+        // addFamilyNetworkOverlay(to: rootNode)  // Disabled for cleaner visualization
         addCamera(to: scene)
 
         return scene
@@ -454,34 +540,13 @@ final class EmotionDistributionSceneBuilder {
         root.addChildNode(omniNode)
     }
 
-    private func addAxes(to root: SCNNode) {
-        addLine(from: SCNVector3(-1.3, -1.3, -1.3), to: SCNVector3(1.3, -1.3, -1.3), color: .systemRed, root: root)
-        addLine(from: SCNVector3(-1.3, -1.3, -1.3), to: SCNVector3(-1.3, 1.3, -1.3), color: .systemGreen, root: root)
-        addLine(from: SCNVector3(-1.3, -1.3, -1.3), to: SCNVector3(-1.3, -1.3, 1.3), color: .systemBlue, root: root)
-
-        addAxisLabel(text: "R", position: SCNVector3(1.45, -1.28, -1.28), color: .systemRed, root: root)
-        addAxisLabel(text: "G", position: SCNVector3(-1.28, 1.45, -1.28), color: .systemGreen, root: root)
-        addAxisLabel(text: "B", position: SCNVector3(-1.28, -1.28, 1.45), color: .systemBlue, root: root)
-    }
-
-    private func addGrid(to root: SCNNode) {
-        for offset in stride(from: -1.2, through: 1.2, by: 0.4) {
-            addGridLine(from: SCNVector3(offset, -1.3, -1.3), to: SCNVector3(offset, 1.3, -1.3), root: root)
-            addGridLine(from: SCNVector3(-1.3, offset, -1.3), to: SCNVector3(1.3, offset, -1.3), root: root)
-            addGridLine(from: SCNVector3(-1.3, -1.3, offset), to: SCNVector3(1.3, -1.3, offset), root: root)
-            addGridLine(from: SCNVector3(-1.3, offset, -1.3), to: SCNVector3(-1.3, offset, 1.3), root: root)
-            addGridLine(from: SCNVector3(-1.3, -1.3, offset), to: SCNVector3(-1.3, 1.3, offset), root: root)
-            addGridLine(from: SCNVector3(offset, -1.3, -1.3), to: SCNVector3(offset, -1.3, 1.3), root: root)
-        }
-    }
-
     private func addPoints(to root: SCNNode) {
         let grouped = Dictionary(grouping: points, by: { $0.emotion })
         let sortedEmotionNames = grouped.keys.sorted()
 
         for emotion in sortedEmotionNames {
             guard let emotionPoints = grouped[emotion] else { continue }
-            for (index, point) in emotionPoints.enumerated() {
+            for point in emotionPoints {
                 let sphere = SCNSphere(radius: 0.04)
                 sphere.segmentCount = 14
                 sphere.firstMaterial?.diffuse.contents = point.uiColor
@@ -493,57 +558,100 @@ final class EmotionDistributionSceneBuilder {
                 node.position = point.normalizedPosition
                 node.name = point.emotion
                 root.addChildNode(node)
-
-                if index < 2 {
-                    addEmotionLabel(point, at: point.normalizedPosition, root: root)
-                }
             }
         }
     }
 
-    private func addEmotionLabel(_ point: EmotionDistributionPoint, at position: SCNVector3, root: SCNNode) {
-        let text = SCNText(string: point.emotion, extrusionDepth: 0.01)
-        text.flatness = 0.25
-        text.font = UIFont.systemFont(ofSize: 5.5, weight: .semibold)
-        text.firstMaterial?.diffuse.contents = UIColor(white: 0.1, alpha: 0.88)
-        text.firstMaterial?.emission.contents = UIColor(white: 0.95, alpha: 0.2)
+    private func addFamilyNetworkOverlay(to root: SCNNode) {
+        guard !emotionFamilyMemberships.isEmpty else {
+            print("❌ emotionFamilyMemberships is empty")
+            return
+        }
 
-        let textNode = SCNNode(geometry: text)
-        textNode.scale = SCNVector3(0.03, 0.03, 0.03)
-        textNode.position = SCNVector3(position.x + 0.03, position.y + 0.06, position.z + 0.03)
-        textNode.constraints = [SCNBillboardConstraint()]
-        root.addChildNode(textNode)
+        print("📊 emotionFamilyMemberships count: \(emotionFamilyMemberships.count)")
+        print("📍 points count: \(points.count)")
+        
+        var familyToMembers: [String: [(EmotionDistributionPoint, EmotionFamilyMembership)]] = [:]
+
+        for point in points {
+            let key = point.emotion.uppercased()
+            guard let memberships = emotionFamilyMemberships[key] else {
+                print("⚠️  No family membership for emotion: \(point.emotion)")
+                continue
+            }
+
+            for membership in memberships {
+                familyToMembers[membership.family, default: []].append((point, membership))
+            }
+        }
+        
+        print("✓ familyToMembers count: \(familyToMembers.count)")
+
+        for (family, members) in familyToMembers where members.count >= 2 {
+            let centroid = averagePosition(of: members.map { $0.0.normalizedPosition })
+            let familyColor = colorForFamily(family)
+
+            addFamilyHub(at: centroid, color: familyColor, root: root)
+
+            for (point, membership) in members {
+                guard membership.role.lowercased() == "primary" else { continue }
+                
+                let thickness = CGFloat(0.04 + (membership.weight * 0.02))
+                let linkColor = familyColor.withAlphaComponent(1.0)
+                root.addChildNode(lineNode(from: point.normalizedPosition, to: centroid, color: linkColor, radius: thickness))
+            }
+        }
     }
 
-    private func addAxisLabel(text: String, position: SCNVector3, color: UIColor, root: SCNNode) {
-        let textGeometry = SCNText(string: text, extrusionDepth: 0.01)
-        textGeometry.flatness = 0.2
-        textGeometry.font = UIFont.systemFont(ofSize: 7, weight: .bold)
-        textGeometry.firstMaterial?.diffuse.contents = color
+    private func addFamilyHub(at position: SCNVector3, color: UIColor, root: SCNNode) {
+        let hub = SCNSphere(radius: 0.045)
+        hub.segmentCount = 16
+        hub.firstMaterial?.diffuse.contents = color.withAlphaComponent(0.75)
+        hub.firstMaterial?.emission.contents = color.withAlphaComponent(0.30)
+        hub.firstMaterial?.lightingModel = .physicallyBased
 
-        let node = SCNNode(geometry: textGeometry)
-        node.scale = SCNVector3(0.05, 0.05, 0.05)
-        node.position = position
-        node.constraints = [SCNBillboardConstraint()]
-        root.addChildNode(node)
+        let hubNode = SCNNode(geometry: hub)
+        hubNode.position = position
+        root.addChildNode(hubNode)
     }
 
-    private func addLine(from start: SCNVector3, to end: SCNVector3, color: UIColor, root: SCNNode) {
-        let line = lineNode(from: start, to: end, color: color, radius: 0.008)
-        root.addChildNode(line)
+    private func averagePosition(of positions: [SCNVector3]) -> SCNVector3 {
+        guard !positions.isEmpty else { return SCNVector3Zero }
+        let count = Float(positions.count)
+
+        let sum = positions.reduce(SCNVector3Zero) { partial, point in
+            SCNVector3(partial.x + point.x, partial.y + point.y, partial.z + point.z)
+        }
+
+        return SCNVector3(sum.x / count, sum.y / count, sum.z / count)
     }
 
-    private func addGridLine(from start: SCNVector3, to end: SCNVector3, root: SCNNode) {
-        let line = lineNode(from: start, to: end, color: UIColor.secondaryLabel.withAlphaComponent(0.12), radius: 0.003)
-        root.addChildNode(line)
+    private func colorForFamily(_ family: String) -> UIColor {
+        let palette: [UIColor] = [
+            .systemTeal,
+            .systemOrange,
+            .systemPink,
+            .systemIndigo,
+            .systemMint,
+            .systemYellow,
+            .systemCyan,
+            .systemRed,
+            .systemBlue,
+            .systemGreen
+        ]
+
+        let index = abs(family.hashValue) % palette.count
+        return palette[index]
     }
 
     private func lineNode(from start: SCNVector3, to end: SCNVector3, color: UIColor, radius: CGFloat) -> SCNNode {
         let vector = SCNVector3(end.x - start.x, end.y - start.y, end.z - start.z)
-        let height = CGFloat(sqrt((vector.x * vector.x) + (vector.y * vector.y) + (vector.z * vector.z)))
+        let length = sqrt((vector.x * vector.x) + (vector.y * vector.y) + (vector.z * vector.z))
+        guard length > 0 else { return SCNNode() }
 
-        let cylinder = SCNCylinder(radius: radius, height: height)
+        let cylinder = SCNCylinder(radius: radius, height: CGFloat(length))
         cylinder.firstMaterial?.diffuse.contents = color
+        cylinder.firstMaterial?.specular.contents = color
         cylinder.firstMaterial?.lightingModel = .physicallyBased
 
         let node = SCNNode(geometry: cylinder)
