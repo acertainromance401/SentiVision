@@ -87,6 +87,12 @@ struct EmotionArchiveView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
 
+                if let primaryFamily = entry.analysis.primaryEmotionFamily {
+                    Text("감정 결: \(primaryFamily)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 HStack(spacing: 8) {
                     ForEach(entry.analysis.dominantColors.prefix(3)) { color in
                         RoundedRectangle(cornerRadius: 10, style: .continuous)

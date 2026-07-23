@@ -506,7 +506,7 @@ final class EmotionDistributionSceneBuilder {
 
         addLights(to: rootNode)
         addPoints(to: rootNode)
-        // addFamilyNetworkOverlay(to: rootNode)  // Disabled for cleaner visualization
+        // addFamilyNetworkOverlay(to: rootNode)  // Disabled: no lines or hubs
         addCamera(to: scene)
 
         return scene
@@ -587,20 +587,17 @@ final class EmotionDistributionSceneBuilder {
         
         print("✓ familyToMembers count: \(familyToMembers.count)")
 
+        var familyCentroids: [String: SCNVector3] = [:]
+
         for (family, members) in familyToMembers where members.count >= 2 {
-            let centroid = averagePosition(of: members.map { $0.0.normalizedPosition })
+            let positions = members.map { $0.0.normalizedPosition }
+            let centroid = averagePosition(of: positions)
             let familyColor = colorForFamily(family)
+            familyCentroids[family] = centroid
 
             addFamilyHub(at: centroid, color: familyColor, root: root)
-
-            for (point, membership) in members {
-                guard membership.role.lowercased() == "primary" else { continue }
-                
-                let thickness = CGFloat(0.04 + (membership.weight * 0.02))
-                let linkColor = familyColor.withAlphaComponent(1.0)
-                root.addChildNode(lineNode(from: point.normalizedPosition, to: centroid, color: linkColor, radius: thickness))
-            }
         }
+
     }
 
     private func addFamilyHub(at position: SCNVector3, color: UIColor, root: SCNNode) {
@@ -643,6 +640,7 @@ final class EmotionDistributionSceneBuilder {
         let index = abs(family.hashValue) % palette.count
         return palette[index]
     }
+
 
     private func lineNode(from start: SCNVector3, to end: SCNVector3, color: UIColor, radius: CGFloat) -> SCNNode {
         let vector = SCNVector3(end.x - start.x, end.y - start.y, end.z - start.z)

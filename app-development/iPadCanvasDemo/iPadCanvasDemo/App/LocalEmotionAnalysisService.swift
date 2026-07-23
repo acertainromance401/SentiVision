@@ -44,6 +44,16 @@ struct EmotionScore: Codable, Hashable, Identifiable {
     }
 }
 
+struct EmotionFamilyScore: Codable, Hashable, Identifiable {
+    let family: String
+    let confidence: Double
+    let emotions: [String]
+
+    var id: String {
+        family
+    }
+}
+
 struct EmotionClusterPrediction: Codable, Hashable, Identifiable {
     let color: RGBColor
     let predictedEmotion: String
@@ -65,6 +75,8 @@ struct EmotionAnalysisResult: Codable, Hashable, Identifiable {
     let dominantColors: [RGBColor]
     let clusterPredictions: [EmotionClusterPrediction]
     let scores: [EmotionScore]
+    let emotionFamilies: [EmotionFamilyScore]?
+    let primaryEmotionFamily: String?
     let createdAt: Date
 }
 
@@ -155,9 +167,12 @@ final class LocalEmotionAnalysisService {
         let scores = sortedScores.map { EmotionScore(emotion: $0.key, confidence: $0.value / totalWeight) }
         let predictedEmotion = scores.first?.emotion ?? baselineEmotion
         let confidence = scores.first?.confidence ?? 0.0
+        let emotionFamilies = Self.clusterEmotionFamilies(from: scores)
+        let primaryEmotionFamily = emotionFamilies.first?.family
 
         let interpretation = Self.interpretation(for: predictedEmotion)
-        let summary = "\(interpretation) 기준 감정 \(baselineEmotion)과 비교하면 \(predictedEmotion) 방향이 더 강합니다."
+        let familySummary = primaryEmotionFamily.map { "감정 결 \($0)가 가장 두드러집니다." } ?? "감정 결을 계산할 수 없습니다."
+        let summary = "\(interpretation) 기준 감정 \(baselineEmotion)과 비교하면 \(predictedEmotion) 방향이 더 강합니다. \(familySummary)"
 
         return EmotionAnalysisResult(
             id: UUID(),
@@ -169,6 +184,8 @@ final class LocalEmotionAnalysisService {
             dominantColors: dominantColors,
             clusterPredictions: clusterPredictions,
             scores: scores,
+            emotionFamilies: emotionFamilies,
+            primaryEmotionFamily: primaryEmotionFamily,
             createdAt: Date()
         )
     }
@@ -441,6 +458,130 @@ final class LocalEmotionAnalysisService {
             return "색의 온도와 대비가 현재 감정의 결을 정리합니다."
         }
     }
+
+    private static func familyName(for emotion: String) -> String {
+        return familyContributions(for: emotion).first?.family ?? "기타"
+    }
+
+    private static func clusterEmotionFamilies(from scores: [EmotionScore]) -> [EmotionFamilyScore] {
+        let grouped = scores.reduce(into: [String: (confidence: Double, emotions: Set<String>)]()) { accumulator, score in
+            for contribution in familyContributions(for: score.emotion) {
+                let weightedConfidence = score.confidence * contribution.weight
+                guard weightedConfidence > 0 else { continue }
+                if var entry = accumulator[contribution.family] {
+                    entry.confidence += weightedConfidence
+                    entry.emotions.insert(score.emotion)
+                    accumulator[contribution.family] = entry
+                } else {
+                    accumulator[contribution.family] = (confidence: weightedConfidence, emotions: [score.emotion])
+                }
+            }
+        }
+        return grouped.map { family, data in
+            EmotionFamilyScore(
+                family: family,
+                confidence: data.confidence,
+                emotions: data.emotions.sorted()
+            )
+        }
+        .sorted {
+            if $0.confidence == $1.confidence {
+                if $0.emotions.count == $1.emotions.count {
+                    return $0.family < $1.family
+                }
+                return $0.emotions.count > $1.emotions.count
+            }
+            return $0.confidence > $1.confidence
+        }
+    }
+
+    private struct FamilyContribution {
+        let family: String
+        let weight: Double
+    }
+
+    private static func familyContributions(for emotion: String) -> [FamilyContribution] {
+        let normalized = normalizeEmotionLabel(emotion)
+        var contributions: [FamilyContribution] = []
+
+        for definition in emotionFamilies {
+            if definition.primary.contains(normalized) {
+                contributions.append(FamilyContribution(family: definition.family, weight: 1.0))
+            } else if definition.secondary.contains(normalized) {
+                contributions.append(FamilyContribution(family: definition.family, weight: 0.65))
+            }
+        }
+
+        if contributions.isEmpty {
+            return [FamilyContribution(family: "기타", weight: 1.0)]
+        }
+
+        return contributions.sorted {
+            if $0.weight == $1.weight {
+                return $0.family < $1.family
+            }
+            return $0.weight > $1.weight
+        }
+    }
+
+    private struct EmotionFamilyDefinition {
+        let family: String
+        let primary: Set<String>
+        let secondary: Set<String>
+    }
+
+    private static let emotionFamilies: [EmotionFamilyDefinition] = [
+        EmotionFamilyDefinition(
+            family: "고요",
+            primary: ["CALMNESS", "TRANQUILITY", "SERENITY", "PEACE", "STILLNESS"],
+            secondary: ["RELIEF", "HARMONY", "BALANCE", "RESERVED", "GROUNDED", "STABILITY", "SECURITY"]
+        ),
+        EmotionFamilyDefinition(
+            family: "온기",
+            primary: ["TENDERNESS", "LOVE", "ROMANCE", "COMFORT", "WARMTH"],
+            secondary: ["AFFECTION", "CARE", "TRUST", "COMPASSION", "NOSTALGIA", "FEMININE", "FRIENDSHIP", "PASSION"]
+        ),
+        EmotionFamilyDefinition(
+            family: "활력",
+            primary: ["ENERGY", "EXCITEMENT", "HAPPINESS", "DYNAMIC", "LIVELY"],
+            secondary: ["JOY", "MOTIVATION", "SPARK", "ENTHUSIASM", "INTENSITY", "PASSION", "OPTIMISM", "FREEDOM", "CREATIVITY"]
+        ),
+        EmotionFamilyDefinition(
+            family: "집중",
+            primary: ["FOCUS", "CLARITY", "PRECISION", "PRACTICAL", "REALITY", "ALERTNESS"],
+            secondary: ["DISCIPLINE", "ORDER", "CONTROL", "DEPTH", "ELEGANCE", "SOPHISTICATION"]
+        ),
+        EmotionFamilyDefinition(
+            family: "그늘",
+            primary: ["DEPRESSION", "SAD", "LONELINESS", "DESPAIR", "LOSS", "ISOLATION", "DARKNESS", "DEATH"],
+            secondary: ["SADNESS", "MELANCHOLY", "GRIEF", "EMPTINESS", "FATIGUE", "DULLNESS", "COLDNESS", "ALIENATION", "SIN"]
+        ),
+        EmotionFamilyDefinition(
+            family: "긴장",
+            primary: ["ANXIETY", "FEAR", "TENSION", "URGENCY", "RAGE", "CHAOS"],
+            secondary: ["STRESS", "COWARDICE", "NERVOUSNESS", "RESTLESSNESS", "CAUTION", "PROTEST", "VULGARITY", "EGOTISM", "IMMATURITY", "MILITARY"]
+        ),
+        EmotionFamilyDefinition(
+            family: "신비",
+            primary: ["MYSTERY", "SPIRITUAL", "BEAUTY", "ROYALTY"],
+            secondary: ["CURIOSITY", "WONDER", "IMAGINATION", "DREAMY", "CREATIVITY", "IDEALISTIC", "ELEGANCE", "SOPHISTICATION", "DEPTH"]
+        ),
+        EmotionFamilyDefinition(
+            family: "연결",
+            primary: ["CONNECTION", "COOPERATION", "TRUST", "HONESTY", "FRIENDSHIP"],
+            secondary: ["BELONGING", "UNITY", "UNDERSTANDING", "COMPASSION", "HARMONY", "BALANCE", "NATURE", "GROUNDED", "LOVE"]
+        ),
+        EmotionFamilyDefinition(
+            family: "회복",
+            primary: ["HOPE", "HEALING", "RENEWAL", "GROWTH", "FRESHNESS", "FREEDOM"],
+            secondary: ["COURAGE", "RECOVERY", "BALANCE", "RESILIENCE", "OPTIMISM", "NATURE", "CONFIDENCE", "ABUNDANCE"]
+        ),
+        EmotionFamilyDefinition(
+            family: "권위",
+            primary: ["AUTHORITY", "STRENGTH", "SECURITY", "STABILITY", "DURABILITY", "MILITARY", "WEALTH"],
+            secondary: ["CONFIDENCE", "ROYALTY", "ABUNDANCE", "CONTROL", "PRACTICAL", "REALITY", "COURAGE"]
+        )
+    ]
 }
 
 private extension Array where Element == RGBColor {
