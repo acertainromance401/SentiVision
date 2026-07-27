@@ -1,0 +1,1980 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SentiVision | iPad Prototype</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f2efe7;
+        --bg-2: #dcecff;
+        --panel: rgba(255, 255, 255, 0.68);
+        --panel-strong: rgba(255, 255, 255, 0.9);
+        --ink: #13202c;
+        --muted: #5d6c78;
+        --line: rgba(19, 32, 44, 0.12);
+        --accent: #f06437;
+        --accent-2: #1fa89d;
+        --accent-3: #4568f0;
+        --good: #2c8f57;
+        --warn: #b46b17;
+        --shadow: 0 24px 60px rgba(19, 32, 44, 0.14);
+        --radius-xl: 30px;
+        --radius-lg: 22px;
+        --radius-md: 16px;
+        --radius-sm: 12px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        color: var(--ink);
+        font-family: "Manrope", sans-serif;
+        background:
+          radial-gradient(circle at 16% 14%, rgba(240, 100, 55, 0.16), transparent 26%),
+          radial-gradient(circle at 84% 18%, rgba(31, 168, 157, 0.16), transparent 24%),
+          radial-gradient(circle at 50% 90%, rgba(69, 104, 240, 0.1), transparent 30%),
+          linear-gradient(135deg, var(--bg), var(--bg-2));
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(to right, rgba(19, 32, 44, 0.05) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(19, 32, 44, 0.05) 1px, transparent 1px);
+        background-size: 28px 28px;
+        opacity: 0.26;
+        mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.78), transparent 94%);
+      }
+
+      .shell {
+        position: relative;
+        width: min(1500px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 20px 0 28px;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .brand-mark {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        background: linear-gradient(145deg, #fb8a4f, #f06437 52%, #1fa89d);
+        box-shadow: 0 14px 28px rgba(240, 100, 55, 0.26);
+      }
+
+      .brand-text strong {
+        display: block;
+        font-size: 1.02rem;
+        letter-spacing: 0.02em;
+      }
+
+      .brand-text span {
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .status-pill {
+        padding: 9px 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.68);
+        border: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: 280px minmax(0, 1fr) 360px;
+        gap: 16px;
+        align-items: start;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(16px);
+      }
+
+      .side,
+      .stage,
+      .inspector {
+        overflow: hidden;
+      }
+
+      .side {
+        display: flex;
+        flex-direction: column;
+        min-height: 780px;
+      }
+
+      .side-head,
+      .inspector-head,
+      .stage-head {
+        padding: 22px 22px 16px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .eyebrow {
+        font-size: 0.76rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--accent-3);
+        font-weight: 800;
+      }
+
+      .side-head h1,
+      .stage-head h2,
+      .inspector-head h2,
+      .screen-title {
+        margin: 8px 0 8px;
+        font-family: "Cormorant Garamond", serif;
+        line-height: 0.9;
+      }
+
+      .side-head h1 {
+        font-size: 2.8rem;
+      }
+
+      .side-head p,
+      .stage-head p,
+      .inspector-head p,
+      .small-copy {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .screen-list {
+        padding: 14px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .screen-btn {
+        width: 100%;
+        border: 1px solid transparent;
+        background: rgba(255, 255, 255, 0.68);
+        color: var(--ink);
+        text-align: left;
+        border-radius: 18px;
+        padding: 14px 14px 13px;
+        cursor: pointer;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+      }
+
+      .screen-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px rgba(19, 32, 44, 0.08);
+      }
+
+      .screen-btn.active {
+        border-color: rgba(240, 100, 55, 0.24);
+        background: linear-gradient(135deg, rgba(240, 100, 55, 0.16), rgba(31, 168, 157, 0.12));
+      }
+
+      .screen-btn strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .screen-btn span {
+        color: var(--muted);
+        font-size: 0.88rem;
+        line-height: 1.45;
+      }
+
+      .screen-btn .badge {
+        display: inline-flex;
+        margin-top: 10px;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: rgba(19, 32, 44, 0.08);
+        color: var(--ink);
+        font-size: 0.76rem;
+        font-weight: 800;
+      }
+
+      .side-footer {
+        margin-top: auto;
+        padding: 18px 22px 22px;
+        border-top: 1px solid var(--line);
+        display: grid;
+        gap: 12px;
+      }
+
+      .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .metric {
+        padding: 12px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.74);
+        border: 1px solid var(--line);
+      }
+
+      .metric strong {
+        display: block;
+        font-size: 1.2rem;
+      }
+
+      .metric span {
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .stage {
+        min-height: 780px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .stage-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .stage-head h2 {
+        font-size: 3rem;
+      }
+
+      .stage-body {
+        padding: 18px;
+        flex: 1;
+      }
+
+      .screen {
+        display: none;
+        animation: rise 0.32s ease;
+      }
+
+      .screen.active {
+        display: block;
+      }
+
+      .hero-card,
+      .section-card,
+      .result-card,
+      .list-card,
+      .form-card,
+      .canvas-card,
+      .setup-card,
+      .loading-card {
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--line);
+        background: var(--panel-strong);
+        box-shadow: 0 14px 30px rgba(19, 32, 44, 0.08);
+      }
+
+      .hero-card {
+        padding: 24px;
+        display: grid;
+        gap: 18px;
+        grid-template-columns: 1.1fr 0.9fr;
+      }
+
+      .hero-copy h3,
+      .setup-card h3,
+      .canvas-card h3,
+      .result-card h3,
+      .form-card h3,
+      .list-card h3,
+      .loading-card h3 {
+        margin: 0 0 8px;
+        font-family: "Cormorant Garamond", serif;
+        font-size: 2.1rem;
+        line-height: 0.95;
+      }
+
+      .hero-copy p,
+      .setup-card p,
+      .canvas-card p,
+      .result-card p,
+      .form-card p,
+      .list-card p,
+      .loading-card p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+
+      .hero-meta {
+        display: grid;
+        gap: 10px;
+        align-content: start;
+      }
+
+      .hero-stat {
+        padding: 14px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(240, 100, 55, 0.14), rgba(31, 168, 157, 0.1));
+        border: 1px solid rgba(240, 100, 55, 0.14);
+      }
+
+      .hero-stat strong {
+        display: block;
+        font-size: 1.25rem;
+      }
+
+      .hero-stat span {
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .cta-row,
+      .toolbar,
+      .swatch-row,
+      .action-row,
+      .archive-actions,
+      .loading-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .btn {
+        appearance: none;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.78);
+        color: var(--ink);
+        border-radius: 14px;
+        padding: 11px 15px;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 22px rgba(19, 32, 44, 0.09);
+      }
+
+      .btn.primary {
+        background: linear-gradient(135deg, var(--accent), #f47d47);
+        color: white;
+        border-color: transparent;
+      }
+
+      .btn.secondary {
+        background: linear-gradient(135deg, rgba(31, 168, 157, 0.14), rgba(69, 104, 240, 0.12));
+      }
+
+      .btn.ghost {
+        background: rgba(255, 255, 255, 0.56);
+      }
+
+      .setup-card,
+      .canvas-card,
+      .loading-card,
+      .result-card,
+      .form-card,
+      .list-card {
+        padding: 22px;
+      }
+
+      .setup-grid,
+      .canvas-grid,
+      .result-grid,
+      .archive-grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .setup-grid {
+        grid-template-columns: 1fr 0.88fr;
+      }
+
+      .field {
+        display: grid;
+        gap: 8px;
+      }
+
+      .field label,
+      .control-group label,
+      .archive-item small,
+      .caption {
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .field input,
+      .field select,
+      .field textarea,
+      .control-group input,
+      .control-group select {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.82);
+        font: inherit;
+        color: var(--ink);
+        outline: none;
+      }
+
+      .field textarea {
+        min-height: 110px;
+        resize: vertical;
+      }
+
+      .score-band {
+        display: grid;
+        gap: 8px;
+      }
+
+      .score-row {
+        display: grid;
+        grid-template-columns: 120px 1fr 54px;
+        gap: 12px;
+        align-items: center;
+        font-size: 0.9rem;
+      }
+
+      .score-track {
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(19, 32, 44, 0.08);
+        overflow: hidden;
+      }
+
+      .score-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--accent), #f6b06b);
+      }
+
+      .swatch-row {
+        gap: 8px;
+      }
+
+      .swatch {
+        min-width: 62px;
+        height: 40px;
+        border-radius: 14px;
+        border: 1px solid rgba(19, 32, 44, 0.12);
+        display: grid;
+        place-items: center;
+        color: rgba(255, 255, 255, 0.95);
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+      }
+
+      .canvas-card {
+        display: grid;
+        gap: 16px;
+      }
+
+      .canvas-top {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .canvas-top .title-group h3 {
+        margin-bottom: 6px;
+      }
+
+      .tool-group {
+        display: grid;
+        gap: 12px;
+      }
+
+      .tool-group .control-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .tool-btn {
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.82);
+        padding: 10px 12px;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .tool-btn.active {
+        background: linear-gradient(135deg, rgba(240, 100, 55, 0.15), rgba(31, 168, 157, 0.12));
+        border-color: rgba(240, 100, 55, 0.22);
+      }
+
+      .drawing-surface {
+        position: relative;
+        border-radius: 28px;
+        overflow: hidden;
+        border: 1px solid rgba(19, 32, 44, 0.1);
+        background:
+          radial-gradient(circle at top left, rgba(255, 255, 255, 0.94), rgba(246, 243, 236, 0.84)),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(235, 240, 248, 0.84));
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 480px;
+        touch-action: none;
+      }
+
+      .canvas-hint {
+        position: absolute;
+        left: 18px;
+        top: 18px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(19, 32, 44, 0.72);
+        color: white;
+        font-size: 0.82rem;
+        letter-spacing: 0.02em;
+      }
+
+      .mini-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .mini-box {
+        padding: 12px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.76);
+        border: 1px solid var(--line);
+      }
+
+      .mini-box strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .mini-box span {
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+
+      .loading-card {
+        display: grid;
+        justify-items: start;
+        gap: 16px;
+        min-height: 560px;
+        align-content: center;
+      }
+
+      .spinner {
+        width: 68px;
+        height: 68px;
+        border-radius: 50%;
+        border: 7px solid rgba(19, 32, 44, 0.1);
+        border-top-color: var(--accent);
+        border-right-color: var(--accent-2);
+        animation: spin 1s linear infinite;
+      }
+
+      .result-grid {
+        grid-template-columns: 1.1fr 0.9fr;
+      }
+
+      .result-main,
+      .result-side,
+      .archive-list,
+      .summary-card {
+        display: grid;
+        gap: 14px;
+      }
+
+      .result-title {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 3rem;
+        margin: 0;
+        line-height: 0.95;
+      }
+
+      .tag-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .tag {
+        padding: 7px 10px;
+        border-radius: 999px;
+        background: rgba(19, 32, 44, 0.08);
+        color: var(--ink);
+        font-size: 0.82rem;
+        font-weight: 800;
+      }
+
+      .summary-card,
+      .archive-item,
+      .detail-card,
+      .tone-card {
+        padding: 16px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.74);
+        border: 1px solid var(--line);
+      }
+
+      .archive-item {
+        display: grid;
+        gap: 10px;
+      }
+
+      .archive-item.active {
+        background: linear-gradient(135deg, rgba(240, 100, 55, 0.12), rgba(31, 168, 157, 0.09));
+        border-color: rgba(240, 100, 55, 0.18);
+      }
+
+      .archive-item-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .archive-item-head strong {
+        font-size: 1rem;
+      }
+
+      .archive-item-head span {
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+
+      .archive-item p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .tone-card .swatch-row .swatch {
+        min-width: 74px;
+      }
+
+      .detail-card pre {
+        margin: 0;
+        white-space: pre-wrap;
+        font-family: inherit;
+        color: var(--ink);
+        line-height: 1.65;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .setup-mask {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(13, 22, 31, 0.34);
+        backdrop-filter: blur(10px);
+        z-index: 20;
+      }
+
+      .setup-mask.active {
+        display: flex;
+      }
+
+      .setup-card {
+        width: min(920px, 100%);
+      }
+
+      .setup-note {
+        margin-top: 8px;
+        color: var(--muted);
+      }
+
+      .setup-grid .field:last-child {
+        align-content: start;
+      }
+
+      .archive-grid {
+        grid-template-columns: 1fr 0.92fr;
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (max-width: 1280px) {
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+
+        .side,
+        .stage,
+        .inspector {
+          min-height: auto;
+        }
+
+        .archive-grid,
+        .result-grid,
+        .setup-grid,
+        .hero-card {
+          grid-template-columns: 1fr;
+        }
+
+        .stage-head {
+          flex-direction: column;
+        }
+
+        .tool-group .control-grid,
+        .mini-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 760px) {
+        .shell {
+          width: min(100vw - 16px, 100%);
+          padding-top: 10px;
+        }
+
+        .topbar {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .brand-text strong,
+        .status-pill {
+          font-size: 0.9rem;
+        }
+
+        .side-head h1,
+        .stage-head h2,
+        .hero-copy h3,
+        .setup-card h3,
+        .canvas-card h3,
+        .result-card h3,
+        .form-card h3,
+        .list-card h3,
+        .loading-card h3 {
+          font-size: 2.2rem;
+        }
+
+        .score-row {
+          grid-template-columns: 92px 1fr 44px;
+          gap: 8px;
+        }
+
+        canvas {
+          height: 340px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="setup-mask" id="setupMask" aria-hidden="true">
+      <section class="panel setup-card" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
+        <div class="eyebrow">First Launch / Initial Setup</div>
+        <h3 id="setupTitle">작업 기준을 먼저 정하고 시작합니다</h3>
+        <p class="setup-note">
+          이 초기 세팅은 앱의 개인 기준값을 만드는 단계입니다. 이후 감정 전시 카드와 아카이브의 기본 톤으로 사용됩니다.
+        </p>
+        <div class="setup-grid" style="margin-top: 18px;">
+          <div class="field">
+            <label for="userName">프로필 이름</label>
+            <input id="userName" type="text" placeholder="예: Mina" />
+          </div>
+          <div class="field">
+            <label for="baselineEmotion">기준 감정</label>
+            <select id="baselineEmotion">
+              <option value="CALMNESS">CALMNESS</option>
+              <option value="TRANQUILITY">TRANQUILITY</option>
+              <option value="ENERGY">ENERGY</option>
+              <option value="HARMONY">HARMONY</option>
+              <option value="FOCUS">FOCUS</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="baselineColor">기준 색상</label>
+            <input id="baselineColor" type="color" value="#F06437" />
+          </div>
+          <div class="field">
+            <label for="sensitivity">체감 민감도</label>
+            <input id="sensitivity" type="range" min="0" max="100" value="56" />
+          </div>
+        </div>
+        <div class="cta-row" style="margin-top: 18px; justify-content: flex-end;">
+          <button class="btn primary" id="startBtn" type="button">시작하기</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true"></div>
+          <div class="brand-text">
+            <strong>SentiVision</strong>
+            <span>iPad 제작 앱 기초 버전</span>
+          </div>
+        </div>
+        <div class="status-pill" id="appStatus">준비 완료</div>
+      </header>
+
+      <div class="workspace">
+        <aside class="panel side">
+          <div class="side-head">
+            <div class="eyebrow">Screen Flow</div>
+            <h1>조용한 전시처럼<br />흐르는 앱</h1>
+            <p>
+              초기 세팅, 캔버스, 분석, 전시, 피드백, 아카이브를 하나의 부드러운 작업 흐름으로 연결합니다.
+            </p>
+          </div>
+
+          <div class="screen-list" id="navList">
+            <button class="screen-btn" data-screen="home" type="button">
+              <strong>SC-A. 환영</strong>
+              <span>최근 감정과 작업 진입점을 확인합니다.</span>
+              <div class="badge">Home</div>
+            </button>
+            <button class="screen-btn" data-screen="canvas" type="button">
+              <strong>SC-B. 캔버스</strong>
+              <span>색을 선택하고 손으로 그림을 그립니다.</span>
+              <div class="badge">Draw</div>
+            </button>
+            <button class="screen-btn" data-screen="loading" type="button">
+              <strong>SC-C. 분석 로딩</strong>
+              <span>색상 추출과 감정 계산을 기다립니다.</span>
+              <div class="badge">Analyze</div>
+            </button>
+            <button class="screen-btn" data-screen="result" type="button">
+              <strong>SC-D. 감정 전시</strong>
+              <span>해석문과 점수 분포를 전시 카드처럼 보여줍니다.</span>
+              <div class="badge">Result</div>
+            </button>
+            <button class="screen-btn" data-screen="feedback" type="button">
+              <strong>SC-E. 피드백</strong>
+              <span>실제 감정과 메모를 남깁니다.</span>
+              <div class="badge">Adjust</div>
+            </button>
+            <button class="screen-btn" data-screen="archive" type="button">
+              <strong>SC-F. 아카이브</strong>
+              <span>작품과 해석을 기록으로 다시 봅니다.</span>
+              <div class="badge">Archive</div>
+            </button>
+          </div>
+
+          <div class="side-footer">
+            <div class="metric-grid">
+              <div class="metric">
+                <strong id="archiveCount">0</strong>
+                <span>saved cards</span>
+              </div>
+              <div class="metric">
+                <strong id="strokeCount">0</strong>
+                <span>strokes</span>
+              </div>
+              <div class="metric">
+                <strong id="recentEmotion">-</strong>
+                <span>latest emotion</span>
+              </div>
+              <div class="metric">
+                <strong id="profileNameMetric">-</strong>
+                <span>profile</span>
+              </div>
+            </div>
+            <p class="small-copy">
+              서버 연동 없이도 흐름을 확인할 수 있는 로컬 기초 버전입니다. 분석은 실제 API 연결 시 대체 가능합니다.
+            </p>
+          </div>
+        </aside>
+
+        <section class="panel stage">
+          <div class="stage-head">
+            <div>
+              <div class="eyebrow" id="screenTag">SC-A · Home</div>
+              <h2 id="screenHeading">오늘의 감정 톤을 전시처럼 시작합니다</h2>
+              <p id="screenSubheading">작업을 시작하면 최근 분석, 캔버스, 그리고 아카이브가 자연스럽게 이어집니다.</p>
+            </div>
+            <div class="archive-actions">
+              <button class="btn ghost" id="resetBtn" type="button">초기화</button>
+              <button class="btn secondary" id="quickCanvasBtn" type="button">새 작품 시작</button>
+            </div>
+          </div>
+
+          <div class="stage-body">
+            <div id="screen-home" class="screen active">
+              <div class="hero-card">
+                <div class="hero-copy">
+                  <div class="eyebrow">Welcome Back</div>
+                  <h3>그림을 그리고, 색을 읽고, 전시 카드로 저장합니다</h3>
+                  <p>
+                    이 화면은 iPad 제작 앱의 첫 진입점입니다. 손으로 그린 결과를 하나의 감정 전시 카드로 남기고,
+                    나중에는 아카이브에서 다시 확인할 수 있습니다.
+                  </p>
+                  <div class="cta-row" style="margin-top: 16px;">
+                    <button class="btn primary" id="homeStartBtn" type="button">새 작품 시작</button>
+                    <button class="btn" id="homeArchiveBtn" type="button">아카이브 보기</button>
+                  </div>
+                </div>
+                <div class="hero-meta">
+                  <div class="hero-stat">
+                    <strong id="heroGreeting">안녕하세요, -님</strong>
+                    <span>기준 감정과 민감도는 초기 세팅에서 읽어옵니다.</span>
+                  </div>
+                  <div class="hero-stat">
+                    <strong id="heroRecent">최근 감정: -</strong>
+                    <span>최근 작업 결과가 있으면 여기에 노출됩니다.</span>
+                  </div>
+                  <div class="hero-stat">
+                    <strong id="heroDays">최근 7일 분석 수: 0</strong>
+                    <span>작업의 누적 리듬을 확인할 수 있습니다.</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mini-grid" style="margin-top: 16px;">
+                <div class="mini-box">
+                  <strong>1. 캔버스</strong>
+                  <span>브러시, 지우개, 색상 선택</span>
+                </div>
+                <div class="mini-box">
+                  <strong>2. 분석</strong>
+                  <span>로컬 모의 분석 또는 API 연결</span>
+                </div>
+                <div class="mini-box">
+                  <strong>3. 전시</strong>
+                  <span>감정 제목과 해석 카드</span>
+                </div>
+                <div class="mini-box">
+                  <strong>4. 기록</strong>
+                  <span>피드백과 아카이브 저장</span>
+                </div>
+              </div>
+            </div>
+
+            <div id="screen-canvas" class="screen">
+              <section class="canvas-card">
+                <div class="canvas-top">
+                  <div class="title-group">
+                    <div class="eyebrow">Canvas / Drawing</div>
+                    <h3>손으로 그리는 순간부터 감정 전시가 시작됩니다</h3>
+                    <p>색상 휠, HEX, RGB, 스포이트, 팔레트 저장을 한 화면에 묶었습니다.</p>
+                  </div>
+                  <div class="cta-row">
+                    <button class="btn ghost" id="clearCanvasBtn" type="button">지우기</button>
+                    <button class="btn primary" id="analyzeBtn" type="button">분석하기</button>
+                  </div>
+                </div>
+
+                <div class="tool-group">
+                  <div class="control-grid">
+                    <button class="tool-btn active" data-tool="brush" type="button">브러시</button>
+                    <button class="tool-btn" data-tool="eraser" type="button">지우개</button>
+                    <button class="tool-btn" data-tool="eyedropper" type="button">스포이트</button>
+                    <button class="tool-btn" data-tool="stamp" type="button">스탬프</button>
+                  </div>
+
+                  <div class="setup-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                    <div class="field">
+                      <label for="hexInput">HEX</label>
+                      <input id="hexInput" type="text" value="#F06437" placeholder="#RRGGBB" />
+                    </div>
+                    <div class="field">
+                      <label for="rgbInput">RGB</label>
+                      <input id="rgbInput" type="text" value="240,100,55" placeholder="240,100,55" />
+                    </div>
+                    <div class="field">
+                      <label for="brushSize">브러시 크기</label>
+                      <input id="brushSize" type="range" min="4" max="42" value="14" />
+                    </div>
+                  </div>
+
+                  <div class="toolbar">
+                    <input id="colorWheel" type="color" value="#F06437" aria-label="color wheel" />
+                    <button class="btn" data-color="#F06437" type="button">Warm</button>
+                    <button class="btn" data-color="#1FA89D" type="button">Calm</button>
+                    <button class="btn" data-color="#4568F0" type="button">Deep</button>
+                    <button class="btn" data-color="#F2C14E" type="button">Light</button>
+                    <button class="btn" data-color="#7B61FF" type="button">Night</button>
+                  </div>
+
+                  <div class="swatch-row" id="palettePreview" aria-label="palette preview"></div>
+                </div>
+
+                <div class="drawing-surface" id="drawingSurface">
+                  <div class="canvas-hint" id="canvasHint">캔버스에 그리면 분석 버튼이 활성화됩니다</div>
+                  <canvas id="drawingCanvas"></canvas>
+                </div>
+              </section>
+            </div>
+
+            <div id="screen-loading" class="screen">
+              <section class="loading-card">
+                <div class="spinner" aria-hidden="true"></div>
+                <div class="eyebrow">Analyzing</div>
+                <h3>색상 추출 중 → 감정 점수 계산 중</h3>
+                <p id="loadingMessage">현저한 색을 찾고 대표 색을 정리하는 중입니다.</p>
+                <div class="loading-row">
+                  <div class="tag">saliency</div>
+                  <div class="tag">kmeans palette</div>
+                  <div class="tag">knn emotion</div>
+                </div>
+              </section>
+            </div>
+
+            <div id="screen-result" class="screen">
+              <section class="result-card">
+                <div class="result-grid">
+                  <div class="result-main">
+                    <div class="eyebrow">Exhibition Card</div>
+                    <h3 class="result-title" id="resultEmotion">TRANQUILITY</h3>
+                    <p id="resultInterpretation">
+                      조용하지만 깊게 번지는 안정의 결이 화면 전반에서 느껴집니다.
+                    </p>
+                    <div class="tag-row" id="resultTags"></div>
+                    <div class="summary-card">
+                      <div class="caption">감정 점수 분포</div>
+                      <div class="score-band" id="scoreBand"></div>
+                    </div>
+                  </div>
+
+                  <div class="result-side">
+                    <div class="tone-card">
+                      <div class="caption">대표 색상</div>
+                      <div class="swatch-row" id="resultSwatches"></div>
+                    </div>
+                    <div class="detail-card">
+                      <div class="caption">한 줄 해설</div>
+                      <pre id="resultSummary"></pre>
+                    </div>
+                    <div class="action-row">
+                      <button class="btn primary" id="saveCardBtn" type="button">전시 저장</button>
+                      <button class="btn secondary" id="openFeedbackBtn" type="button">감정 수정</button>
+                      <button class="btn" id="openArchiveFromResultBtn" type="button">아카이브</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div id="screen-feedback" class="screen">
+              <section class="form-card">
+                <div class="eyebrow">Feedback</div>
+                <h3>의도한 감정으로 다시 정렬합니다</h3>
+                <p>예측 감정이 다르면 실제 감정과 메모를 남겨 결과를 보정합니다.</p>
+                <div class="setup-grid" style="margin-top: 16px; grid-template-columns: 1fr 1fr;">
+                  <div class="field">
+                    <label for="predictedField">예측 감정</label>
+                    <input id="predictedField" type="text" readonly />
+                  </div>
+                  <div class="field">
+                    <label for="correctedField">실제 감정</label>
+                    <input id="correctedField" type="text" placeholder="예: CALMNESS" />
+                  </div>
+                  <div class="field" style="grid-column: 1 / -1;">
+                    <label for="noteField">메모</label>
+                    <textarea id="noteField" maxlength="200" placeholder="예: 선은 거칠었지만 전체적으로 안정감을 더 주고 싶었어요."></textarea>
+                  </div>
+                </div>
+                <div class="cta-row" style="margin-top: 16px; justify-content: flex-end;">
+                  <button class="btn" id="feedbackCancelBtn" type="button">취소</button>
+                  <button class="btn primary" id="submitFeedbackBtn" type="button">제출</button>
+                </div>
+              </section>
+            </div>
+
+            <div id="screen-archive" class="screen">
+              <section class="list-card">
+                <div class="archive-grid">
+                  <div>
+                    <div class="eyebrow">Archive</div>
+                    <h3>전시 카드 목록</h3>
+                    <p>분석 결과와 보정 기록을 최신 순으로 쌓아둡니다.</p>
+                    <div class="archive-list" id="archiveList" style="margin-top: 16px;"></div>
+                  </div>
+                  <div class="detail-card" id="archiveDetail">
+                    <div class="caption">선택된 카드</div>
+                    <pre id="archiveDetailText">아직 선택된 카드가 없습니다.</pre>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <aside class="panel inspector">
+          <div class="inspector-head">
+            <div class="eyebrow">Inspector</div>
+            <h2>기초 버전 상태</h2>
+            <p>
+              이 공간은 현재 작업의 요약과 다음 액션을 보여줍니다. 앞으로 서버 연동이 추가되더라도 구조는 유지됩니다.
+            </p>
+          </div>
+
+          <div class="screen-list" style="padding-top: 16px;">
+            <div class="summary-card">
+              <div class="caption">현재 프로필</div>
+              <strong id="inspectorProfile">-</strong>
+              <p id="inspectorSetup">초기 세팅이 아직 완료되지 않았습니다.</p>
+            </div>
+            <div class="summary-card">
+              <div class="caption">최근 분석</div>
+              <strong id="inspectorAnalysis">-</strong>
+              <p id="inspectorAnalysisText">그림을 그리면 분석 결과가 여기에 반영됩니다.</p>
+            </div>
+            <div class="summary-card">
+              <div class="caption">다음 단계</div>
+              <strong id="inspectorNext">환영 → 캔버스</strong>
+              <p id="inspectorNextText">시작하기를 누른 뒤 캔버스에서 첫 선을 그어보세요.</p>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <script>
+      const EMOTION_LIBRARY = {
+        TRANQUILITY: {
+          description: "조용하지만 깊게 번지는 안정의 결이 화면 전반에서 느껴집니다.",
+          summary: "정돈된 면과 맑은 색의 균형이 안정감을 강하게 만들고 있습니다.",
+          tags: ["calm", "breathing room", "soft structure"],
+          swatches: ["#A4D9F5", "#7BC8E8", "#D9F1FF"],
+          scores: { TRANQUILITY: 0.42, CALMNESS: 0.26, HARMONY: 0.18, FOCUS: 0.14 },
+        },
+        CALMNESS: {
+          description: "잔잔한 층이 쌓이며 시선이 천천히 머무르는 톤입니다.",
+          summary: "부드러운 대비와 낮은 채도가 전체 장면을 정돈합니다.",
+          tags: ["still", "balanced", "low tension"],
+          swatches: ["#9EDBEA", "#C5E8DD", "#D8E6F5"],
+          scores: { CALMNESS: 0.39, TRANQUILITY: 0.29, HARMONY: 0.18, TRUST: 0.14 },
+        },
+        ENERGY: {
+          description: "속도감이 강하고 중심을 앞으로 밀어내는 흐름이 보입니다.",
+          summary: "온도가 높고 대비가 강한 색이 활동성을 끌어올립니다.",
+          tags: ["motion", "lift", "vital"],
+          swatches: ["#F06437", "#FFB347", "#FFE08A"],
+          scores: { ENERGY: 0.44, INTENSITY: 0.24, CONFIDENCE: 0.18, JOY: 0.14 },
+        },
+        HARMONY: {
+          description: "서로 다른 색이 부딪히지 않고 자연스럽게 이어집니다.",
+          summary: "대비보다 연결이 우선되는 화면 구성입니다.",
+          tags: ["blend", "alignment", "soft contrast"],
+          swatches: ["#1FA89D", "#8FD6B7", "#E3F7E6"],
+          scores: { HARMONY: 0.41, TRUST: 0.23, CALMNESS: 0.2, FOCUS: 0.16 },
+        },
+        FOCUS: {
+          description: "불필요한 요소를 줄이고 중심 축을 또렷하게 세웁니다.",
+          summary: "중앙 집중형 구조와 절제된 색 조합이 시선을 고정시킵니다.",
+          tags: ["clear", "direct", "intentional"],
+          swatches: ["#4568F0", "#8FA6FF", "#D4DCFF"],
+          scores: { FOCUS: 0.43, TRUST: 0.24, CALMNESS: 0.18, ENERGY: 0.15 },
+        },
+        TRUST: {
+          description: "안정감과 개방감이 동시에 유지되는 톤입니다.",
+          summary: "과한 자극이 없고 관계의 여백이 넓게 남아 있습니다.",
+          tags: ["reliable", "open", "quiet confidence"],
+          swatches: ["#5EB6A2", "#8FD3C7", "#D7F0EB"],
+          scores: { TRUST: 0.4, HARMONY: 0.24, CALMNESS: 0.2, FOCUS: 0.16 },
+        },
+      };
+
+      const state = {
+        screen: "home",
+        tool: "brush",
+        color: "#F06437",
+        brushSize: 14,
+        palette: ["#F06437", "#1FA89D", "#4568F0"],
+        strokes: [],
+        redoStack: [],
+        drawing: false,
+        lastPoint: null,
+        hasDrawing: false,
+        profile: null,
+        archive: loadArchive(),
+        analysis: null,
+        activeArchiveId: null,
+        canvasScale: 1,
+        analysisTimer: null,
+      };
+
+      const els = {
+        setupMask: document.getElementById("setupMask"),
+        userName: document.getElementById("userName"),
+        baselineEmotion: document.getElementById("baselineEmotion"),
+        baselineColor: document.getElementById("baselineColor"),
+        sensitivity: document.getElementById("sensitivity"),
+        startBtn: document.getElementById("startBtn"),
+        appStatus: document.getElementById("appStatus"),
+        navList: document.getElementById("navList"),
+        screenHeading: document.getElementById("screenHeading"),
+        screenSubheading: document.getElementById("screenSubheading"),
+        screenTag: document.getElementById("screenTag"),
+        heroGreeting: document.getElementById("heroGreeting"),
+        heroRecent: document.getElementById("heroRecent"),
+        heroDays: document.getElementById("heroDays"),
+        archiveCount: document.getElementById("archiveCount"),
+        strokeCount: document.getElementById("strokeCount"),
+        recentEmotion: document.getElementById("recentEmotion"),
+        profileNameMetric: document.getElementById("profileNameMetric"),
+        inspectorProfile: document.getElementById("inspectorProfile"),
+        inspectorSetup: document.getElementById("inspectorSetup"),
+        inspectorAnalysis: document.getElementById("inspectorAnalysis"),
+        inspectorAnalysisText: document.getElementById("inspectorAnalysisText"),
+        inspectorNext: document.getElementById("inspectorNext"),
+        inspectorNextText: document.getElementById("inspectorNextText"),
+        quickCanvasBtn: document.getElementById("quickCanvasBtn"),
+        resetBtn: document.getElementById("resetBtn"),
+        homeStartBtn: document.getElementById("homeStartBtn"),
+        homeArchiveBtn: document.getElementById("homeArchiveBtn"),
+        clearCanvasBtn: document.getElementById("clearCanvasBtn"),
+        analyzeBtn: document.getElementById("analyzeBtn"),
+        colorWheel: document.getElementById("colorWheel"),
+        hexInput: document.getElementById("hexInput"),
+        rgbInput: document.getElementById("rgbInput"),
+        brushSize: document.getElementById("brushSize"),
+        palettePreview: document.getElementById("palettePreview"),
+        drawingSurface: document.getElementById("drawingSurface"),
+        drawingCanvas: document.getElementById("drawingCanvas"),
+        canvasHint: document.getElementById("canvasHint"),
+        loadingMessage: document.getElementById("loadingMessage"),
+        resultEmotion: document.getElementById("resultEmotion"),
+        resultInterpretation: document.getElementById("resultInterpretation"),
+        resultTags: document.getElementById("resultTags"),
+        scoreBand: document.getElementById("scoreBand"),
+        resultSwatches: document.getElementById("resultSwatches"),
+        resultSummary: document.getElementById("resultSummary"),
+        saveCardBtn: document.getElementById("saveCardBtn"),
+        openFeedbackBtn: document.getElementById("openFeedbackBtn"),
+        openArchiveFromResultBtn: document.getElementById("openArchiveFromResultBtn"),
+        predictedField: document.getElementById("predictedField"),
+        correctedField: document.getElementById("correctedField"),
+        noteField: document.getElementById("noteField"),
+        feedbackCancelBtn: document.getElementById("feedbackCancelBtn"),
+        submitFeedbackBtn: document.getElementById("submitFeedbackBtn"),
+        archiveList: document.getElementById("archiveList"),
+        archiveDetailText: document.getElementById("archiveDetailText"),
+      };
+
+      const canvas = els.drawingCanvas;
+      const ctx = canvas.getContext("2d");
+
+      function loadArchive() {
+        try {
+          const raw = localStorage.getItem("sentivision.archive");
+          return raw ? JSON.parse(raw) : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function saveArchive() {
+        localStorage.setItem("sentivision.archive", JSON.stringify(state.archive));
+      }
+
+      function loadProfile() {
+        try {
+          const raw = localStorage.getItem("sentivision.profile");
+          return raw ? JSON.parse(raw) : null;
+        } catch {
+          return null;
+        }
+      }
+
+      function saveProfile() {
+        localStorage.setItem("sentivision.profile", JSON.stringify(state.profile));
+      }
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function normalizeHex(input) {
+        const value = String(input).trim().replace(/^#/, "");
+        if (/^[0-9a-fA-F]{6}$/.test(value)) return `#${value.toUpperCase()}`;
+        return state.color;
+      }
+
+      function hexToRgb(hex) {
+        const normalized = normalizeHex(hex).replace("#", "");
+        const red = parseInt(normalized.slice(0, 2), 16);
+        const green = parseInt(normalized.slice(2, 4), 16);
+        const blue = parseInt(normalized.slice(4, 6), 16);
+        return { red, green, blue };
+      }
+
+      function rgbToHex(red, green, blue) {
+        return [red, green, blue]
+          .map((value) => clamp(Number(value) || 0, 0, 255).toString(16).padStart(2, "0"))
+          .join("")
+          .toUpperCase()
+          .replace(/^/, "#");
+      }
+
+      function hexToRgba(hex, alpha = 1) {
+        const { red, green, blue } = hexToRgb(hex);
+        return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+      }
+
+      function parseRgbInput(value) {
+        const parts = String(value)
+          .split(",")
+          .map((part) => Number(part.trim()));
+        if (parts.length !== 3 || parts.some((value) => Number.isNaN(value))) {
+          return hexToRgb(state.color);
+        }
+        return {
+          red: clamp(parts[0], 0, 255),
+          green: clamp(parts[1], 0, 255),
+          blue: clamp(parts[2], 0, 255),
+        };
+      }
+
+      function setColor(hex, syncInputs = true) {
+        state.color = normalizeHex(hex);
+        if (syncInputs) {
+          els.colorWheel.value = state.color;
+          els.hexInput.value = state.color;
+          const rgb = hexToRgb(state.color);
+          els.rgbInput.value = `${rgb.red},${rgb.green},${rgb.blue}`;
+        }
+        pushPalette(state.color);
+        renderPalettePreview();
+      }
+
+      function pushPalette(hex) {
+        state.palette = [hex, ...state.palette.filter((item) => item !== hex)].slice(0, 5);
+      }
+
+      function renderPalettePreview() {
+        els.palettePreview.innerHTML = "";
+        state.palette.forEach((hex) => {
+          const swatch = document.createElement("button");
+          swatch.className = "swatch";
+          swatch.type = "button";
+          swatch.style.background = hex;
+          swatch.textContent = hex;
+          swatch.addEventListener("click", () => setColor(hex));
+          els.palettePreview.appendChild(swatch);
+        });
+      }
+
+      function resizeCanvas() {
+        const rect = canvas.getBoundingClientRect();
+        const ratio = window.devicePixelRatio || 1;
+        state.canvasScale = ratio;
+        canvas.width = Math.round(rect.width * ratio);
+        canvas.height = Math.round(rect.height * ratio);
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        redrawCanvas();
+      }
+
+      function redrawCanvas() {
+        const rect = canvas.getBoundingClientRect();
+        ctx.clearRect(0, 0, rect.width, rect.height);
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        for (const stroke of state.strokes) {
+          if (stroke.points.length < 1) continue;
+          ctx.beginPath();
+          ctx.globalCompositeOperation = stroke.mode === "eraser" ? "destination-out" : "source-over";
+          ctx.strokeStyle = stroke.mode === "eraser" ? "rgba(0,0,0,1)" : stroke.color;
+          ctx.lineWidth = stroke.size;
+          stroke.points.forEach((point, index) => {
+            if (index === 0) {
+              ctx.moveTo(point.x, point.y);
+            } else {
+              ctx.lineTo(point.x, point.y);
+            }
+          });
+          ctx.stroke();
+        }
+
+        ctx.globalCompositeOperation = "source-over";
+        state.hasDrawing = state.strokes.length > 0;
+        updateCanvasHint();
+      }
+
+      function addStrokePoint(point) {
+        const stroke = state.strokes[state.strokes.length - 1];
+        if (!stroke) return;
+        stroke.points.push(point);
+      }
+
+      function startStroke(point) {
+        state.strokes.push({
+          mode: state.tool,
+          color: state.tool === "eraser" ? "#ffffff" : state.color,
+          size: state.tool === "stamp" ? Math.max(8, state.brushSize * 1.2) : state.brushSize,
+          points: [point],
+        });
+        state.redoStack = [];
+        state.drawing = true;
+        state.lastPoint = point;
+        state.hasDrawing = true;
+        updateCanvasHint();
+        renderStats();
+      }
+
+      function drawLine(toPoint) {
+        if (!state.drawing) return;
+        addStrokePoint(toPoint);
+        redrawCanvas();
+      }
+
+      function stopStroke() {
+        if (!state.drawing) return;
+        state.drawing = false;
+        state.lastPoint = null;
+        updateCanvasHint();
+        renderStats();
+      }
+
+      function getCanvasPoint(event) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = event.clientX ?? event.touches?.[0]?.clientX ?? 0;
+        const clientY = event.clientY ?? event.touches?.[0]?.clientY ?? 0;
+        return {
+          x: clamp(clientX - rect.left, 0, rect.width),
+          y: clamp(clientY - rect.top, 0, rect.height),
+        };
+      }
+
+      function sampleCanvasColor(point) {
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.floor(point.x * state.canvasScale);
+        const y = Math.floor(point.y * state.canvasScale);
+        const pixel = ctx.getImageData(x, y, 1, 1).data;
+        if (pixel[3] === 0) {
+          return state.color;
+        }
+        return rgbToHex(pixel[0], pixel[1], pixel[2]);
+      }
+
+      function clearCanvas() {
+        state.strokes = [];
+        state.redoStack = [];
+        redrawCanvas();
+        state.hasDrawing = false;
+        updateCanvasHint();
+        renderStats();
+      }
+
+      function updateCanvasHint() {
+        els.canvasHint.textContent = state.hasDrawing
+          ? `${state.tool === "eraser" ? "지우개" : state.tool === "stamp" ? "스탬프" : "브러시"} 모드 · 분석 가능`
+          : "캔버스에 그리면 분석 버튼이 활성화됩니다";
+        els.analyzeBtn.disabled = !state.hasDrawing;
+      }
+
+      function setScreen(screen, options = {}) {
+        state.screen = screen;
+        document.querySelectorAll(".screen").forEach((element) => element.classList.remove("active"));
+        const target = document.getElementById(`screen-${screen}`);
+        if (target) target.classList.add("active");
+        document.querySelectorAll(".screen-btn").forEach((button) => {
+          button.classList.toggle("active", button.dataset.screen === screen);
+        });
+
+        const config = {
+          home: {
+            tag: "SC-A · Home",
+            title: "오늘의 감정 톤을 전시처럼 시작합니다",
+            sub: "작업을 시작하면 최근 분석, 캔버스, 그리고 아카이브가 자연스럽게 이어집니다.",
+            next: "환영 → 캔버스",
+            nextText: "시작하기를 누른 뒤 캔버스에서 첫 선을 그어보세요.",
+          },
+          canvas: {
+            tag: "SC-B · Canvas",
+            title: "손으로 그리는 순간부터 감정 전시가 시작됩니다",
+            sub: "색상 휠, HEX, RGB, 스포이트, 팔레트 저장을 한 화면에 묶었습니다.",
+            next: "캔버스 → 분석",
+            nextText: "색을 고르고 선을 그린 뒤 분석하기를 누르면 결과 카드가 나타납니다.",
+          },
+          loading: {
+            tag: "SC-C · Analyze",
+            title: "색상 추출 중 → 감정 점수 계산 중",
+            sub: "살리언시, 대표 색상, 최근접 감정 매핑이 차례대로 정리됩니다.",
+            next: "분석 → 전시",
+            nextText: "결과가 나오면 해석 카드와 점수 분포를 바로 확인합니다.",
+          },
+          result: {
+            tag: "SC-D · Exhibition",
+            title: "감정 전시 카드로 결과를 읽습니다",
+            sub: "예측 감정, 해석 문장, 점수 분포, 대표 색상을 하나의 전시 카드로 보여줍니다.",
+            next: "전시 → 피드백/아카이브",
+            nextText: "결과를 저장하거나 실제 감정을 보정할 수 있습니다.",
+          },
+          feedback: {
+            tag: "SC-E · Feedback",
+            title: "의도한 감정으로 다시 정렬합니다",
+            sub: "예측 감정이 다르면 실제 감정과 메모를 남겨 결과를 보정합니다.",
+            next: "피드백 → 아카이브",
+            nextText: "보정 내용을 저장하면 기록 목록에 반영됩니다.",
+          },
+          archive: {
+            tag: "SC-F · Archive",
+            title: "작품과 해석을 전시 카드로 다시 봅니다",
+            sub: "최신 작업부터 오래된 기록까지 감정 제목과 메모를 한 번에 확인합니다.",
+            next: "아카이브 → 홈",
+            nextText: "기록을 확인한 뒤 다시 새 작품으로 돌아갈 수 있습니다.",
+          },
+        };
+
+        const current = config[screen] || config.home;
+        els.screenTag.textContent = current.tag;
+        els.screenHeading.textContent = current.title;
+        els.screenSubheading.textContent = current.sub;
+        els.inspectorNext.textContent = current.next;
+        els.inspectorNextText.textContent = current.nextText;
+
+        if (screen === "home") {
+          els.appStatus.textContent = "준비 완료";
+        } else if (screen === "canvas") {
+          els.appStatus.textContent = "그림 작성 중";
+        } else if (screen === "loading") {
+          els.appStatus.textContent = "분석 중";
+        } else if (screen === "result") {
+          els.appStatus.textContent = "전시 결과 확인";
+        } else if (screen === "feedback") {
+          els.appStatus.textContent = "피드백 입력";
+        } else if (screen === "archive") {
+          els.appStatus.textContent = "아카이브 탐색";
+        }
+
+        if (!options.skipScroll) {
+          target?.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+        }
+      }
+
+      function renderStats() {
+        els.archiveCount.textContent = state.archive.length;
+        els.strokeCount.textContent = state.strokes.length;
+        els.recentEmotion.textContent = state.analysis?.emotion || state.profile?.baselineEmotion || "-";
+        els.profileNameMetric.textContent = state.profile?.name || "-";
+        els.heroGreeting.textContent = state.profile?.name ? `${state.profile.name}님, 안녕하세요` : "안녕하세요, -님";
+        els.heroRecent.textContent = `최근 감정: ${state.analysis?.emotion || state.profile?.baselineEmotion || "-"}`;
+        els.heroDays.textContent = `최근 7일 분석 수: ${countRecentAnalyses()}개`;
+        els.inspectorProfile.textContent = state.profile ? `${state.profile.name} / ${state.profile.baselineEmotion}` : "-";
+        els.inspectorSetup.textContent = state.profile
+          ? `기준 색상 ${state.profile.baselineColor}, 민감도 ${state.profile.sensitivity}`
+          : "초기 세팅이 아직 완료되지 않았습니다.";
+        els.inspectorAnalysis.textContent = state.analysis?.emotion || "-";
+        els.inspectorAnalysisText.textContent = state.analysis?.summary || "그림을 그리면 분석 결과가 여기에 반영됩니다.";
+      }
+
+      function countRecentAnalyses() {
+        const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+        return state.archive.filter((entry) => entry.createdAt >= cutoff).length;
+      }
+
+      function inferEmotion() {
+        const baseOrder = ["TRANQUILITY", "CALMNESS", "HARMONY", "FOCUS", "TRUST", "ENERGY"];
+        const swatches = state.palette.slice(0, 3).map((hex) => hexToRgb(hex));
+        const averages = swatches.reduce(
+          (accumulator, rgb) => {
+            accumulator.red += rgb.red;
+            accumulator.green += rgb.green;
+            accumulator.blue += rgb.blue;
+            return accumulator;
+          },
+          { red: 0, green: 0, blue: 0 }
+        );
+        const count = Math.max(swatches.length, 1);
+        const mean = {
+          red: averages.red / count,
+          green: averages.green / count,
+          blue: averages.blue / count,
+        };
+        const warmth = (mean.red + mean.green * 0.6 - mean.blue) / 255;
+        const calmness = (mean.blue + mean.green * 0.7 - mean.red * 0.2) / 255;
+        const balance = 1 - Math.abs(mean.red - mean.blue) / 255;
+
+        if (warmth > 0.62) return "ENERGY";
+        if (calmness > 0.73) return "TRANQUILITY";
+        if (balance > 0.78) return "HARMONY";
+        if (mean.blue > mean.red && mean.blue > mean.green) return "FOCUS";
+        if (mean.green > mean.red) return "TRUST";
+        return baseOrder[(state.strokes.length + Math.round(state.brushSize)) % baseOrder.length];
+      }
+
+      function buildAnalysis() {
+        const emotion = inferEmotion();
+        const profileTone = EMOTION_LIBRARY[state.profile?.baselineEmotion || "TRANQUILITY"] || EMOTION_LIBRARY.TRANQUILITY;
+        const library = EMOTION_LIBRARY[emotion] || EMOTION_LIBRARY.TRANQUILITY;
+        const dominantColors = state.palette.slice(0, 4);
+        const scoreEntries = Object.entries(library.scores);
+        const totalScore = scoreEntries.reduce((sum, [, value]) => sum + value, 0);
+        const normalizedScores = scoreEntries.map(([label, value]) => ({
+          label,
+          value,
+          ratio: value / totalScore,
+        }));
+
+        const analysis = {
+          emotion,
+          description: library.description,
+          summary: `${library.summary} 기준 감정 ${state.profile?.baselineEmotion || "TRANQUILITY"}과 비교하면 ${emotion} 방향이 더 강합니다.`,
+          tags: [...library.tags, `baseline:${state.profile?.baselineEmotion || "TRANQUILITY"}`],
+          swatches: dominantColors.length ? dominantColors : profileTone.swatches,
+          scores: normalizedScores,
+          createdAt: Date.now(),
+        };
+
+        state.analysis = analysis;
+        els.predictedField.value = analysis.emotion;
+        els.correctedField.value = analysis.emotion;
+        els.noteField.value = "";
+        renderAnalysisView();
+        renderStats();
+        return analysis;
+      }
+
+      function renderAnalysisView() {
+        if (!state.analysis) return;
+        els.resultEmotion.textContent = state.analysis.emotion;
+        els.resultInterpretation.textContent = state.analysis.description;
+        els.resultSummary.textContent = state.analysis.summary;
+        els.resultTags.innerHTML = "";
+        state.analysis.tags.forEach((tag) => {
+          const pill = document.createElement("div");
+          pill.className = "tag";
+          pill.textContent = tag;
+          els.resultTags.appendChild(pill);
+        });
+
+        els.scoreBand.innerHTML = "";
+        state.analysis.scores.forEach((entry) => {
+          const row = document.createElement("div");
+          row.className = "score-row";
+          row.innerHTML = `
+            <div>${entry.label}</div>
+            <div class="score-track"><div class="score-fill" style="width: ${Math.round(entry.ratio * 100)}%;"></div></div>
+            <div>${Math.round(entry.ratio * 100)}%</div>
+          `;
+          els.scoreBand.appendChild(row);
+        });
+
+        els.resultSwatches.innerHTML = "";
+        state.analysis.swatches.forEach((hex) => {
+          const chip = document.createElement("div");
+          chip.className = "swatch";
+          chip.style.background = hex;
+          chip.textContent = hex;
+          els.resultSwatches.appendChild(chip);
+        });
+
+        els.recentEmotion.textContent = state.analysis.emotion;
+        els.heroRecent.textContent = `최근 감정: ${state.analysis.emotion}`;
+        els.inspectorAnalysis.textContent = state.analysis.emotion;
+        els.inspectorAnalysisText.textContent = state.analysis.summary;
+      }
+
+      function simulateLoading(nextScreen) {
+        setScreen("loading");
+        els.loadingMessage.textContent = "현저한 색을 찾고 대표 팔레트를 정리하는 중입니다.";
+        clearTimeout(state.analysisTimer);
+        state.analysisTimer = setTimeout(() => {
+          els.loadingMessage.textContent = "대표 색과 감정 점수를 정리하고 있습니다.";
+        }, 800);
+        clearTimeout(state.analysisTimer2);
+        state.analysisTimer2 = setTimeout(() => {
+          buildAnalysis();
+          setScreen(nextScreen);
+          renderArchive();
+        }, 1500);
+      }
+
+      function createArchiveEntry({ predictedEmotion, correctedEmotion, note, kind }) {
+        const analysis = state.analysis || buildAnalysis();
+        const entry = {
+          id: crypto.randomUUID(),
+          createdAt: Date.now(),
+          predictedEmotion,
+          correctedEmotion: correctedEmotion || "",
+          note: note || "",
+          palette: analysis.swatches,
+          summary: analysis.summary,
+          kind,
+          title: analysis.emotion,
+          interpretation: analysis.description,
+        };
+        state.archive.unshift(entry);
+        saveArchive();
+        renderArchive();
+        renderStats();
+        return entry;
+      }
+
+      function renderArchive() {
+        els.archiveList.innerHTML = "";
+        if (state.archive.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "archive-item";
+          empty.innerHTML = `
+            <strong>아직 전시된 기록이 없습니다.</strong>
+            <p>캔버스에서 첫 작품을 만들면 여기에 카드가 쌓입니다.</p>
+          `;
+          els.archiveList.appendChild(empty);
+          els.archiveDetailText.textContent = "선택된 카드가 없습니다.";
+          return;
+        }
+
+        state.archive.forEach((entry, index) => {
+          const card = document.createElement("button");
+          card.type = "button";
+          card.className = `archive-item ${state.activeArchiveId === entry.id ? "active" : ""}`;
+          const time = new Date(entry.createdAt).toLocaleString("ko-KR", {
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+          card.innerHTML = `
+            <div class="archive-item-head">
+              <strong>${time}</strong>
+              <span>#${index + 1}</span>
+            </div>
+            <p>예측: ${entry.predictedEmotion}${entry.correctedEmotion ? ` · 수정: ${entry.correctedEmotion}` : " · 수정 없음"}</p>
+            <div class="swatch-row">${entry.palette.map((hex) => `<div class="swatch" style="background:${hex}; min-width:48px; height:28px; font-size:0.66rem;">${hex}</div>`).join("")}</div>
+          `;
+          card.addEventListener("click", () => {
+            state.activeArchiveId = entry.id;
+            renderArchive();
+            renderArchiveDetail(entry);
+          });
+          els.archiveList.appendChild(card);
+        });
+
+        const current = state.archive.find((entry) => entry.id === state.activeArchiveId) || state.archive[0];
+        if (current) {
+          state.activeArchiveId = current.id;
+          renderArchiveDetail(current);
+        }
+      }
+
+      function renderArchiveDetail(entry) {
+        const time = new Date(entry.createdAt).toLocaleString("ko-KR", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        els.archiveDetailText.textContent = [
+          `작업 시각: ${time}`,
+          `예측 감정: ${entry.predictedEmotion}`,
+          `수정 감정: ${entry.correctedEmotion || "없음"}`,
+          `기록 종류: ${entry.kind}`,
+          `메모: ${entry.note || "-"}`,
+          "",
+          entry.summary,
+        ].join("\n");
+      }
+
+      function bindEvents() {
+        document.querySelectorAll("[data-screen]").forEach((button) => {
+          button.addEventListener("click", () => setScreen(button.dataset.screen));
+        });
+
+        document.querySelectorAll("[data-color]").forEach((button) => {
+          button.addEventListener("click", () => setColor(button.dataset.color));
+        });
+
+        document.querySelectorAll("[data-tool]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.tool = button.dataset.tool;
+            document.querySelectorAll("[data-tool]").forEach((item) => item.classList.remove("active"));
+            button.classList.add("active");
+            updateCanvasHint();
+          });
+        });
+
+        els.colorWheel.addEventListener("input", (event) => setColor(event.target.value));
+        els.hexInput.addEventListener("change", (event) => setColor(event.target.value));
+        els.rgbInput.addEventListener("change", (event) => {
+          const rgb = parseRgbInput(event.target.value);
+          setColor(rgbToHex(rgb.red, rgb.green, rgb.blue));
+        });
+        els.brushSize.addEventListener("input", (event) => {
+          state.brushSize = Number(event.target.value);
+        });
+
+        els.resetBtn.addEventListener("click", () => {
+          clearCanvas();
+          state.analysis = null;
+          state.activeArchiveId = null;
+          renderStats();
+          setScreen("home");
+        });
+
+        els.quickCanvasBtn.addEventListener("click", () => setScreen("canvas"));
+        els.homeStartBtn.addEventListener("click", () => setScreen("canvas"));
+        els.homeArchiveBtn.addEventListener("click", () => {
+          renderArchive();
+          setScreen("archive");
+        });
+        els.clearCanvasBtn.addEventListener("click", clearCanvas);
+        els.analyzeBtn.addEventListener("click", () => simulateLoading("result"));
+        els.saveCardBtn.addEventListener("click", () => {
+          const predictedEmotion = state.analysis?.emotion || buildAnalysis().emotion;
+          const entry = createArchiveEntry({ predictedEmotion, correctedEmotion: "", note: "", kind: "result" });
+          state.activeArchiveId = entry.id;
+          setScreen("archive");
+        });
+        els.openFeedbackBtn.addEventListener("click", () => {
+          els.predictedField.value = state.analysis?.emotion || "-";
+          els.correctedField.value = state.analysis?.emotion || "";
+          setScreen("feedback");
+        });
+        els.openArchiveFromResultBtn.addEventListener("click", () => {
+          renderArchive();
+          setScreen("archive");
+        });
+        els.feedbackCancelBtn.addEventListener("click", () => setScreen("result"));
+        els.submitFeedbackBtn.addEventListener("click", () => {
+          const predictedEmotion = els.predictedField.value || state.analysis?.emotion || "-";
+          const correctedEmotion = els.correctedField.value.trim().toUpperCase();
+          const note = els.noteField.value.trim();
+          if (!correctedEmotion) {
+            alert("실제 감정을 입력해주세요.");
+            return;
+          }
+          const entry = createArchiveEntry({ predictedEmotion, correctedEmotion, note, kind: "feedback" });
+          state.activeArchiveId = entry.id;
+          setScreen("archive");
+        });
+
+        els.startBtn.addEventListener("click", () => {
+          state.profile = {
+            name: els.userName.value.trim() || "Visitor",
+            baselineEmotion: els.baselineEmotion.value,
+            baselineColor: els.baselineColor.value,
+            sensitivity: Number(els.sensitivity.value),
+          };
+          saveProfile();
+          els.setupMask.classList.remove("active");
+          els.setupMask.setAttribute("aria-hidden", "true");
+          renderStats();
+          setScreen("home");
+          setColor(state.profile.baselineColor);
+        });
+
+        const startDrawing = (event) => {
+          event.preventDefault();
+          const point = getCanvasPoint(event);
+          startStroke(point);
+          if (state.tool === "eyedropper") {
+            const sampledHex = sampleCanvasColor(point);
+            setColor(sampledHex);
+            stopStroke();
+            return;
+          }
+          if (state.tool === "stamp") {
+            for (let index = 0; index < 8; index += 1) {
+              addStrokePoint({
+                x: point.x + Math.cos(index) * 2,
+                y: point.y + Math.sin(index) * 2,
+              });
+            }
+            redrawCanvas();
+            stopStroke();
+          }
+        };
+
+        const moveDrawing = (event) => {
+          if (!state.drawing) return;
+          event.preventDefault();
+          drawLine(getCanvasPoint(event));
+        };
+
+        canvas.addEventListener("pointerdown", startDrawing);
+        canvas.addEventListener("pointermove", moveDrawing);
+        window.addEventListener("pointerup", stopStroke);
+        canvas.addEventListener("pointerleave", stopStroke);
+
+        window.addEventListener("resize", resizeCanvas);
+      }
+
+      function init() {
+        state.profile = loadProfile();
+        if (!state.profile) {
+          els.setupMask.classList.add("active");
+          els.setupMask.setAttribute("aria-hidden", "false");
+        } else {
+          els.userName.value = state.profile.name;
+          els.baselineEmotion.value = state.profile.baselineEmotion;
+          els.baselineColor.value = state.profile.baselineColor;
+          els.sensitivity.value = state.profile.sensitivity;
+        }
+
+        setColor(state.profile?.baselineColor || state.color, true);
+        renderPalettePreview();
+        renderArchive();
+        renderStats();
+        bindEvents();
+        resizeCanvas();
+        setScreen("home", { skipScroll: true });
+        updateCanvasHint();
+
+        if (state.profile) {
+          els.setupMask.classList.remove("active");
+          els.setupMask.setAttribute("aria-hidden", "true");
+        }
+      }
+
+      init();
+    </script>
+  </body>
+</html>
