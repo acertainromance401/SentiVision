@@ -8,7 +8,7 @@ lang: ko-KR
 
 <div class="cover">
 
-<p class="kicker">PRODUCT · iPAD · ON-DEVICE ANALYSIS</p>
+<p class="kicker">PRODUCT · iPAD · ON-DEVICE ANALYSIS · ML/DATA</p>
 
 # SentiVision
 
@@ -75,7 +75,7 @@ SentiVision은 사용자가 iPad에서 자유롭게 그림을 그리고, 작품�
 
 <div class="visual-block">
 
-![SentiVision 홈 화면 제품 시안](images/sentivision-home-screen.png){.product-shot}
+<img class="product-shot" src="images/sentivision-home-screen.png" alt="SentiVision 홈 화면 제품 시안">
 
 <p class="caption">제품 시안. 현재 데모는 별도 홈 대신 프로필 배너와 Analysis · Canvas · Archive 탭을 사용합니다.</p>
 
@@ -144,32 +144,211 @@ PencilKit 드로잉 → 전경 픽셀 추출 → K-means 대표색 → 최근접
 
 <div class="page-break"></div>
 
-# 05. 데이터와 모델 검증
+# 05. 데이터 설계와 계보
 
-## 제품 코드와 연구 코드를 분리해 비교 가능성을 유지했다
+## 어떤 데이터를 사용했는가
 
-원본 기준선은 `base_model/`, 개선·검증 코드는 `test/`에 분리했습니다. 보강 데이터셋은 대표 RGB 주변의 작은 변형만 추가해 감정 간 경계가 지나치게 흐려지는 문제를 줄였습니다.
+색상과 감정의 관계를 표현하는 기본 단위는 **RGB 좌표 1개와 감정 라벨 1개**입니다. 원천 데이터는 Sophi Grace의 Kaggle 데이터셋 **Color associations in Art: Pt 1 Warmth**이며 MIT 라이선스 고지와 함께 프로젝트용 파생 CSV로 관리합니다.
 
-| 검증 항목 | 구현 |
-|---|---|
-| 이미지 영역 추출 | Laplacian Saliency와 그림 중심 추출 방식 비교 |
-| 대표색 | K-means, 기본 3개 중심색 |
-| 감정 모델 | KNN 기준선과 RandomForest 비교 |
-| 평가 | 고정 검증 인덱스, Accuracy, F1, 혼동행렬, 반복 분할 |
-| 데이터 안전장치 | 중복·RGB 충돌 검사, 수정 전 CSV 백업, 업데이트 이력 |
-| 시각화 | RGB 3D 분포, Saliency, 대표색 감정, 성능 대시보드 |
+| 데이터 파일 | 규모 | 역할 |
+|---|---:|---|
+| `color_emotion_labeled_updated.csv` | 113행 | 편집·정규화된 원본 기준선 |
+| `color_emotion_labeled_augmented.csv` | 249행, 83개 감정 | 앱 번들과 Python 학습·검증의 현재 기준 |
+| `emotion_family_classification.csv` | 107개 연결 | 83개 세부 감정을 10개 감정 패밀리로 연결 |
+| `colorassociations_warmth - colorwarmth.csv` | 원천 자산 | 데이터 출처와 색상 온기 연구의 기준 |
 
-<div class="visual-block">
+### 색상-감정 CSV 스키마
 
-![KNN과 RandomForest 모델 성능 비교 대시보드](../test/outputs/comparison_20260327_133051_performance_dashboard.png){.dashboard}
+| 필드 | 타입/범위 | 의미 |
+|---|---|---|
+| `emotion` | 문자열 | `CALMNESS`, `ENERGY` 같은 감정 라벨 |
+| `R`, `G`, `B` | 정수, 0~255 | 색상을 RGB 3차원 좌표로 표현한 특성 |
+| `color_name` | 문자열/선택 | 사람이 읽는 색상 이름 |
+| `color_label` | 문자열/선택 | 원천 데이터의 색상 식별 값 |
 
-<p class="caption">저장소에 보존된 모델 비교 대시보드. 수치는 데이터·분할 조건에 종속되므로 제품 정확도 주장보다 모델 선택과 회귀 확인의 근거로 사용합니다.</p>
+학습 특성은 `R`, `G`, `B` 세 개이고 예측 목표는 `emotion`입니다. 라벨은 trim·대문자 통일을 적용하고 `CORWARDICE → COWARDICE`, `LONLINESS → LONELINESS`처럼 확인된 오탈자를 매핑합니다.
+
+## 왜 보강 데이터가 필요한가
+
+원본에는 한 감정당 표본이 하나뿐인 singleton이 많아 3-NN과 계층 분할 평가가 불안정했습니다. 이를 해결하기 위해 각 감정의 대표 RGB를 보존하면서 HSV 공간에서 작은 변형 2개만 추가하는 **하이브리드 C안**을 사용했습니다.
+
+1. 각 감정의 첫 RGB를 대표점으로 유지합니다.
+2. 감정 문자열에서 만든 결정적 seed로 hue를 최대 ±0.006, saturation/value를 약 2~3%만 이동합니다.
+3. RGB 충돌 시 채널을 1~3만큼 미세 조정합니다.
+4. 감정마다 대표점 1개와 변형점 2개를 만들어 총 249행, 감정당 3표본을 구성합니다.
+5. `(emotion, R, G, B)` 중복과 동일 RGB의 감정 충돌을 검사합니다.
+
+<div class="callout">
+
+**데이터 해석 원칙**<br>
+이 데이터는 임상적 감정 정답이나 사용자 집단의 확률 분포가 아닙니다. 색상 연상 데이터에서 파생된 소규모 의미 매핑이므로, 제품에서는 진단이 아니라 작품을 돌아보기 위한 해석 재료로 사용합니다.
+
+</div>
+
+# 06. 온디바이스 분석 원리
+
+## 1단계 · 드로잉을 픽셀 데이터로 바꾸기
+
+PencilKit의 `PKDrawing`을 `UIImage`로 렌더링한 뒤 Core Graphics의 RGBA 버퍼로 읽습니다. 계산량을 줄이기 위해 가로·세로 2픽셀 간격으로 샘플링하고 다음 조건으로 투명 배경과 거의 흰 배경을 제외합니다.
+
+<div class="formula">
+
+alpha ≥ 24 이고, `max(R,G,B) < 245` 또는 `HSV saturation > 0.08`인 픽셀을 전경으로 선택
+
+</div>
+
+필터 결과가 비어 있으면 alpha가 0보다 큰 픽셀을 다시 사용해 단색·저채도 그림에서도 분석이 중단되지 않게 합니다.
+
+## 2단계 · K-means로 대표색 찾기
+
+전경에 서로 다른 색이 충분하면 최대 3개 클러스터를 만듭니다. 각 픽셀을 가장 가까운 중심에 배정하고, 중심을 소속 픽셀의 RGB 평균으로 갱신하는 과정을 최대 8회 반복합니다. 중심이 더 이상 변하지 않으면 조기 종료합니다.
+
+<div class="formula">
+
+거리: d²(x, μ) = (Rₓ-Rᵤ)² + (Gₓ-Gᵤ)² + (Bₓ-Bᵤ)²<br>
+목적: J = Σₖ Σₓ∈Cₖ ||x-μₖ||² 를 작게 만드는 대표 중심 μₖ 탐색
+
+</div>
+
+K-means는 감정을 분류하는 모델이 아니라 수많은 드로잉 픽셀을 **대표 RGB 최대 3개로 압축하는 비지도 학습 단계**입니다.
+
+## 3단계 · 3-NN으로 감정 매핑하기
+
+각 대표색과 249개 색상 표본 사이의 RGB 제곱거리를 계산하고 가장 가까운 3개를 선택합니다. 감정 라벨 다수결로 승자를 정하며, 득표수가 같으면 해당 감정 이웃들의 평균 거리가 더 짧은 쪽을 선택합니다.
+
+<div class="formula">
+
+cluster confidence = 승리 감정의 이웃 수 / 3<br>
+따라서 가능한 기본 값은 1/3, 2/3, 1입니다.
+
+</div>
+
+Python의 `KNeighborsClassifier(n_neighbors=3)`와 같은 원리를 Swift에서 직접 구현해 모델 서버나 별도 ML 런타임 없이 동작하게 했습니다.
+
+## 4단계 · 그림 전체 점수와 감정 패밀리 만들기
+
+대표색마다 차지한 픽셀 수와 3-NN 득표 비율을 곱해 감정별 가중치를 만들고 전체 합으로 나눕니다.
+
+<div class="formula">
+
+W(e) = Σ(cluster pixel count × cluster confidence)<br>
+score(e) = W(e) / Σ W(all emotions)
+
+</div>
+
+세부 감정은 10개 패밀리로 다시 집계합니다. primary 관계는 1.0, secondary 관계는 0.65를 곱하며 하나의 감정이 여러 패밀리에 기여할 수 있습니다.
+
+<div class="formula">
+
+family score(f) = Σ score(e) × membership weight(e,f)
+
+</div>
+
+<div class="callout">
+
+**확률이 아니라 해석 점수**<br>
+앱의 `confidence`와 `family score`는 softmax, 베이지안 추론, 확률 보정(calibration)으로 얻은 값이 아닙니다. 이웃 투표와 픽셀 비중을 정규화한 상대 점수이므로 “감정일 확률 80%”가 아니라 “현재 규칙에서 이 감정이 차지한 비중”으로 읽어야 합니다.
 
 </div>
 
 <div class="page-break"></div>
 
-# 06. 엔지니어링 품질
+# 07. Python 머신러닝 검증
+
+## 제품 코드와 연구 코드를 분리해 비교 가능성을 유지했다
+
+원본 기준선은 `base_model/`, 개선·검증 코드는 `test/`에 분리했습니다. 앱은 빠른 로컬 추론에 집중하고 Python은 이미지 추출 방식, 분류기 선택, 데이터 변경의 영향을 반복 측정합니다.
+
+### 이미지 전처리와 색상 추출
+
+1. OpenCV로 이미지를 읽고 BGR에서 RGB로 변환합니다.
+2. 분석 해상도를 100×100으로 줄여 연산량과 노이즈를 제어합니다.
+3. 5×5 Gaussian Blur로 미세 노이즈를 줄입니다.
+4. Laplacian으로 밝기 변화가 큰 경계를 구하고 threshold 10으로 현저성 마스크를 만듭니다.
+5. `paint_region` 변형에서는 채도·밝기·경계 강도를 결합하고 percentile threshold로 실제 칠한 영역을 더 넓게 찾습니다.
+6. scikit-learn K-means를 `random_state=42`, `n_init=10`, 최대 3클러스터로 실행합니다.
+
+### 비교한 지도학습 모델
+
+| 모델 | 설정 | 선택 이유 | 프로젝트에서의 역할 |
+|---|---|---|---|
+| K-Nearest Neighbors | `k=3` | RGB 공간에서 “가까운 색은 비슷한 감정”이라는 가정을 직접 표현 | 해석 가능한 기준선이자 앱 구현 원형 |
+| Random Forest | 100 trees, `random_state=42` | 여러 결정 트리의 비선형 경계를 앙상블해 KNN과 다른 분류 특성 제공 | 대안 모델 성능 비교 |
+
+KNN은 별도 파라미터 학습보다 표본 자체를 기억하는 instance-based model입니다. RandomForest는 RGB 채널 분할 규칙을 서로 다른 bootstrap 트리에서 학습하고 다수결합니다. 데이터가 작기 때문에 복잡한 신경망보다 두 모델의 편향 차이를 비교하는 방식을 선택했습니다.
+
+### 평가 설계
+
+| 평가 장치 | 구현 목적 |
+|---|---|
+| RGB 0~1 정규화 | 거리 기반 KNN의 특성 범위를 명확하게 유지 |
+| 고정 검증셋 20% | 데이터 변경 전후를 같은 표본에서 비교 |
+| 최대 5-fold 교차검증 | 단일 분할 결과에 대한 의존도 완화 |
+| 30회 repeated holdout | seed 42~71의 평균·표준편차와 모델 승률 확인 |
+| Accuracy | 전체 예측 중 정답 비율 |
+| Weighted F1 | 클래스별 precision/recall을 표본 수로 가중해 불균형 반영 |
+| Confusion Matrix | 어떤 감정끼리 혼동되는지 시각적으로 확인 |
+| 우세 margin 0.03 | Accuracy와 F1 평균이 모두 3%p 이상일 때만 RF 우세로 판정 |
+
+<div class="visual-block">
+
+<img class="dashboard" src="../test/outputs/comparison_20260327_133051_performance_dashboard.png" alt="KNN과 RandomForest 모델 성능 비교 대시보드">
+
+<p class="caption">저장소에 보존된 모델 비교 대시보드. 수치는 데이터·분할 조건에 종속되므로 제품 정확도 주장보다 모델 선택과 회귀 확인의 근거로 사용합니다.</p>
+
+</div>
+
+## 모델 결과를 과장하지 않는 이유
+
+- 249행에 83개 감정으로 감정당 3표본뿐이라 일반화 근거가 제한적입니다.
+- 두 변형 표본이 같은 대표색에서 생성되어 통계적으로 독립적인 사람 응답이 아닙니다.
+- RGB 유클리드 거리는 간단하지만 인간 지각에 균일한 CIELAB·ΔE 거리가 아닙니다.
+- 현재 검증셋은 외부 사용자 집단의 독립 라벨이 아니라 같은 파생 데이터 내부 분할입니다.
+- 따라서 대시보드는 제품 정확도 인증이 아니라 코드 회귀와 모델 후보 비교에 사용합니다.
+
+다음 모델 단계에서는 실제 사용자 정정 데이터를 별도 검증셋으로 분리하고, CIELAB 색공간·거리 가중 KNN·확률 calibration을 비교해야 합니다.
+
+<div class="page-break"></div>
+
+# 08. 기술 스택과 각 도구의 책임
+
+## iPad 제품 계층
+
+| 기술 | 사용 위치 | 선택 이유 |
+|---|---|---|
+| SwiftUI | 온보딩, 탭, 결과, 아카이브 | 상태 기반 UI와 iPad 레이아웃 구성 |
+| PencilKit | 드로잉 캔버스와 펜/지우개 | Apple Pencil 입력과 `PKDrawing` 데이터 제공 |
+| UIKit / Core Graphics | 드로잉 이미지화와 RGBA 버퍼 접근 | 픽셀 단위 전경 추출과 UIColor 처리 |
+| SceneKit | RGB 감정 분포 3D 렌더링 | 색상 표본을 공간 좌표로 탐색 |
+| Foundation | CSV, Codable, UserDefaults | 번들 데이터 로드와 로컬 아카이브 영속화 |
+
+## Python 데이터·ML 계층
+
+| 라이브러리 | 책임 |
+|---|---|
+| pandas | CSV 로드, 정규화 열 생성, 중복 제거, 피드백 병합, 이력 저장 |
+| NumPy | RGB 배열 연산, 평균·표준편차, percentile, 마스크 처리 |
+| OpenCV | 이미지 로드·리사이즈, Gaussian Blur, Laplacian, threshold |
+| scikit-learn | KMeans, KNeighborsClassifier, RandomForestClassifier, 데이터 분할과 평가 지표 |
+| matplotlib | RGB 3D 분포, Saliency, 대표색, 성능 대시보드 생성 |
+| pytest / Ruff | Python smoke test와 정적 품질 검사 |
+
+## Node 운영·실험 계층
+
+Node API는 외부 ML 라이브러리 없이 표준 `http` 모듈로 구성했습니다. 입력 팔레트의 색상별 weight를 정규화한 뒤 warmth, saturation, brightness를 가중 합산합니다.
+
+<div class="formula">
+
+score = 0.45 × signedWarmth + 0.35 × saturation + 0.20 × (brightness - 0.5)<br>
+heuristic confidence = clamp(0.55 + 0.40 × |score|, 0.55, 0.99)
+
+</div>
+
+이 값 역시 학습된 확률이 아니라 API 계약과 관측성 검증을 위한 휴리스틱입니다. Jest로 파싱·응답·메트릭을 검증하고, SHA-256 해시로 같은 사용자가 항상 같은 A/B variant에 배정되게 했습니다. NDJSON 이벤트 로그, Prometheus 형식 메트릭, Docker·Grafana 구성을 통해 모델 외의 운영 경로도 함께 실험했습니다.
+
+<div class="page-break"></div>
+
+# 09. 엔지니어링 품질
 
 ## 기능 구현 밖의 운영 가능성도 함께 검증했다
 
@@ -202,7 +381,7 @@ CI/CD와 AWS 정의가 존재한다는 것은 운영 배포 완료를 뜻하지 
 
 <div class="page-break"></div>
 
-# 07. 진행 과정과 의사결정
+# 10. 진행 과정과 의사결정
 
 ## Baseline에서 제품 경험까지
 
@@ -225,7 +404,7 @@ CI/CD와 AWS 정의가 존재한다는 것은 운영 배포 완료를 뜻하지 
 
 <div class="page-break"></div>
 
-# 08. 현재 상태와 다음 단계
+# 11. 현재 상태와 다음 단계
 
 ## 구현 상태
 

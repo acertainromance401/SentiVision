@@ -72,6 +72,7 @@ h3 {
   font-size: 11.5pt;
   line-height: 1.35;
   letter-spacing: 0;
+  break-after: avoid-page;
 }
 
 p {
@@ -221,6 +222,7 @@ img {
 
 .callout,
 .architecture,
+.formula,
 .closing {
   margin: 6mm 0;
   padding: 5mm 6mm;
@@ -231,6 +233,15 @@ img {
 
 .architecture {
   border-left-color: var(--teal);
+}
+
+.formula {
+  border-left-color: var(--blue);
+  background: #edf2f6;
+  color: #173947;
+  font-family: "SFMono-Regular", Menlo, monospace;
+  font-size: 8.8pt;
+  line-height: 1.7;
 }
 
 .closing {
