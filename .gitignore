@@ -13,3 +13,9 @@ node_modules/
 # Python cache artifacts
 __pycache__/
 *.pyc
+
+# Xcode user state
+**/xcuserdata/
+
+# Generated portfolio preview
+Project_Descriptions/.SentiVision_Portfolio.build.html

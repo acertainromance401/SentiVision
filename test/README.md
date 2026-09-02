@@ -34,6 +34,10 @@
 추가 분석 스크립트:
 
 - `test/personalized_palette_model.py`: 앵커 색상/감정 기반 개인화 팔레트 분석 실험 스크립트
+- `test/calculate_family_colors.py`: 패밀리별 RGB 평균과 Swift 색상 맵 생성
+- `test/calculate_family_colors_semantic.py`: 의미 기반 패밀리 대표색 대안과 Swift 색상 맵 생성
+
+패밀리 대표색 스크립트는 3D 분포에서 데이터 평균색과 의미 기반 색상을 비교하기 위한 연구 도구입니다. 현재 제품 화면은 점 중심의 가독성을 유지하기 위해 비교 오버레이를 기본 비활성화합니다.
 
 ## 현재 폴더 구조
 
@@ -100,6 +104,13 @@ python test/test_model_comparison.py
 
 ```bash
 python test/run_all_analysis.py
+```
+
+패밀리 대표색 비교:
+
+```bash
+python test/calculate_family_colors.py
+python test/calculate_family_colors_semantic.py
 ```
 
 ### 비교 스크립트 사용 흐름
