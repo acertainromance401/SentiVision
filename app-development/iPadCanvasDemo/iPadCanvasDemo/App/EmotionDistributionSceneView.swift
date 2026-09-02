@@ -506,7 +506,8 @@ final class EmotionDistributionSceneBuilder {
 
         addLights(to: rootNode)
         addPoints(to: rootNode)
-        // addFamilyNetworkOverlay(to: rootNode)  // Disabled: no lines or hubs
+        // addEmotionConnections(to: rootNode)  // Disabled: no lines
+        // addFamilyColorComparison(to: rootNode)  // Disabled: research overlay
         addCamera(to: scene)
 
         return scene
@@ -560,6 +561,72 @@ final class EmotionDistributionSceneBuilder {
                 root.addChildNode(node)
             }
         }
+    }
+
+    private func addEmotionConnections(to root: SCNNode) {
+        let grouped = Dictionary(grouping: points, by: { $0.emotion })
+
+        for (_, emotionPoints) in grouped {
+            guard emotionPoints.count > 1 else { continue }
+
+            // 같은 감정의 모든 점 쌍을 연결
+            for i in 0..<emotionPoints.count {
+                for j in (i+1)..<emotionPoints.count {
+                    let line = lineNode(from: emotionPoints[i].normalizedPosition,
+                                       to: emotionPoints[j].normalizedPosition,
+                                       color: emotionPoints[i].uiColor.withAlphaComponent(0.4),
+                                       radius: 0.01)
+                    root.addChildNode(line)
+                }
+            }
+        }
+    }
+
+    private func addFamilyColorComparison(to root: SCNNode) {
+        var familyToPoints: [String: [EmotionDistributionPoint]] = [:]
+
+        for point in points {
+            let key = point.emotion.uppercased()
+            guard let memberships = emotionFamilyMemberships[key] else { continue }
+
+            for membership in memberships {
+                familyToPoints[membership.family, default: []].append(point)
+            }
+        }
+
+        for (family, familyPoints) in familyToPoints {
+            guard let averageColor = LocalEmotionAnalysisService.familyRepresentativeColors[family],
+                  let semanticColor = LocalEmotionAnalysisService.familyRepresentativeColorsSemanticV2[family]
+            else {
+                continue
+            }
+
+            let center = averagePosition(of: familyPoints.map(\.normalizedPosition))
+            let offset: Float = 0.08
+            let averagePosition = SCNVector3(center.x - offset, center.y, center.z)
+            let semanticPosition = SCNVector3(center.x + offset, center.y, center.z)
+
+            addComparisonSphere(at: averagePosition, color: averageColor, root: root)
+            addComparisonSphere(at: semanticPosition, color: semanticColor, root: root)
+            root.addChildNode(
+                lineNode(
+                    from: averagePosition,
+                    to: semanticPosition,
+                    color: .white,
+                    radius: 0.008
+                )
+            )
+        }
+    }
+
+    private func addComparisonSphere(at position: SCNVector3, color: UIColor, root: SCNNode) {
+        let sphere = SCNSphere(radius: 0.05)
+        sphere.firstMaterial?.diffuse.contents = color
+        sphere.firstMaterial?.lightingModel = .physicallyBased
+
+        let node = SCNNode(geometry: sphere)
+        node.position = position
+        root.addChildNode(node)
     }
 
     private func addFamilyNetworkOverlay(to root: SCNNode) {

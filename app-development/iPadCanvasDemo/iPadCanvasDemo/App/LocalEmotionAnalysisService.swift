@@ -113,6 +113,34 @@ enum EmotionArchiveStore {
 final class LocalEmotionAnalysisService {
     static let shared = LocalEmotionAnalysisService()
 
+    // 방식 1: 각 감정 패밀리의 대표색 (RGB 평균값)
+    static let familyRepresentativeColors: [String: UIColor] = [
+        "고요": UIColor(red: 140/255.0, green: 162/255.0, blue: 144/255.0, alpha: 1.0),
+        "권위": UIColor(red: 165/255.0, green: 120/255.0, blue: 51/255.0, alpha: 1.0),
+        "그늘": UIColor(red: 80/255.0, green: 57/255.0, blue: 62/255.0, alpha: 1.0),
+        "긴장": UIColor(red: 198/255.0, green: 125/255.0, blue: 61/255.0, alpha: 1.0),
+        "신비": UIColor(red: 110/255.0, green: 65/255.0, blue: 131/255.0, alpha: 1.0),
+        "연결": UIColor(red: 186/255.0, green: 119/255.0, blue: 138/255.0, alpha: 1.0),
+        "온기": UIColor(red: 180/255.0, green: 60/255.0, blue: 89/255.0, alpha: 1.0),
+        "집중": UIColor(red: 147/255.0, green: 88/255.0, blue: 47/255.0, alpha: 1.0),
+        "활력": UIColor(red: 129/255.0, green: 168/255.0, blue: 14/255.0, alpha: 1.0),
+        "회복": UIColor(red: 131/255.0, green: 178/255.0, blue: 127/255.0, alpha: 1.0),
+    ]
+
+    // 방식 2: 의미 기반 감정 패밀리 대표색 (더 뚜렷하고 구분 가능)
+    static let familyRepresentativeColorsSemanticV2: [String: UIColor] = [
+        "고요": UIColor(red: 120/255.0, green: 140/255.0, blue: 110/255.0, alpha: 1.0),  // 차분한 자연색
+        "권위": UIColor(red: 184/255.0, green: 134/255.0, blue: 11/255.0, alpha: 1.0),   // 고급 금색
+        "그늘": UIColor(red: 40/255.0, green: 40/255.0, blue: 40/255.0, alpha: 1.0),     // 깊은 검은색
+        "긴장": UIColor(red: 255/255.0, green: 102/255.0, blue: 0/255.0, alpha: 1.0),    // 경고 주황
+        "신비": UIColor(red: 75/255.0, green: 0/255.0, blue: 130/255.0, alpha: 1.0),     // 깊은 보라색
+        "연결": UIColor(red: 219/255.0, green: 39/255.0, blue: 119/255.0, alpha: 1.0),   // 따뜻한 핑크
+        "온기": UIColor(red: 220/255.0, green: 20/255.0, blue: 60/255.0, alpha: 1.0),    // 따뜻한 빨강
+        "집중": UIColor(red: 101/255.0, green: 67/255.0, blue: 33/255.0, alpha: 1.0),    // 진한 갈색
+        "활력": UIColor(red: 0/255.0, green: 204/255.0, blue: 0/255.0, alpha: 1.0),      // 생생한 초록
+        "회복": UIColor(red: 144/255.0, green: 238/255.0, blue: 144/255.0, alpha: 1.0),  // 밝은 연두
+    ]
+
     private let samples: [EmotionSample]
 
     private init() {

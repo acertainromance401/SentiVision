@@ -82,6 +82,7 @@ Located: `iPadCanvasDemo/Data/emotion_family_classification.csv`
 
 ### Deferred/Experimental Features
 - ⏸️ Emotion family network overlay (lines connecting points to family centroids) - Currently disabled
+- ⏸️ Average-vs-semantic family representative color comparison - Currently disabled
 - ⏸️ Family-based point clustering visualization
 - ⏸️ Interactive point selection/detail view
 - ⏸️ Corrected emotion and note feedback
