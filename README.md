@@ -12,6 +12,20 @@ SentiVision은 개인 창작 사용자가 마음껏 그림을 그리고, 그 과
 | iPhone 감상 앱 | 작품과 감정 전시 카드 감상, 아카이브 탐색 | 무료 |
 | 공용 데이터/분석 | 감정 해석, 피드백 반영, 개인 분포 저장 계층 | 공통 |
 
+## Current Status (2026-09-02)
+
+상태 기준은 **구현**(기본 동작 경로 연결), **프로토타입**(검증 가능하지만 제품 요구 일부 미완료), **백로그**(설계 또는 계획 단계)로 구분합니다.
+
+| 영역 | 상태 | 현재 범위 |
+| --- | --- | --- |
+| iPad 제작 앱 | 구현 | 온보딩, PencilKit 캔버스, 온디바이스 K-means/최근접 감정 분석, 결과 전시, SceneKit 3D 분포, 로컬 아카이브 |
+| Node AI API | 프로토타입 | `/health`, `/metrics`, 팔레트 기반 `/analyze`; 앱 미연동, 휴리스틱 모델 |
+| Python 분석 | 프로토타입 | Saliency/K-means/KNN, RandomForest 비교, CSV 보정과 시각화 검증 |
+| 실험·운영 | 구현 | Jest/Playwright, 기능 플래그, A/B, Canary 시뮬레이션, Docker, Prometheus/Grafana, GitHub Actions |
+| 후속 제품 기능 | 백로그 | 감정 수정·메모, 개인 학습 반영, 고급 색상 도구, 원격 동기화, iPhone 감상 앱 |
+
+현재 앱의 주 분석 경로는 서버 호출이 아니라 온디바이스 처리입니다. Node API와 Python 파이프라인은 각각 배포·관측성 검증과 모델 연구를 위한 독립 트랙으로 유지합니다.
+
 ## About
 
 프로젝트의 제품 방향은 다음과 같습니다.
@@ -67,6 +81,8 @@ SentiVision은 개인 창작 사용자가 마음껏 그림을 그리고, 그 과
 상세 실행 방법과 폴더별 사용 가이드는 아래 문서를 참고하세요.
 
 - 한 장 요약: [Project_Descriptions/Product_Summary_SentiVision.md](Project_Descriptions/Product_Summary_SentiVision.md)
+- 포트폴리오: [Project_Descriptions/SentiVision_Portfolio.md](Project_Descriptions/SentiVision_Portfolio.md)
+- 포트폴리오 PDF: [Project_Descriptions/SentiVision_Portfolio.pdf](Project_Descriptions/SentiVision_Portfolio.pdf)
 - test/README.md
 
 참고:

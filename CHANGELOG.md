@@ -6,6 +6,10 @@ All notable changes to this project are documented in this file.
 
 ### Added (iPadCanvasDemo)
 
+- End-to-end local flow: first-run setup → PencilKit drawing → on-device analysis → emotion exhibition → local archive
+- On-device foreground pixel extraction, up-to-three-color K-means clustering, nearest emotion mapping, and emotion family summary
+- Result cards with interpretation, confidence, dominant colors, emotion scores, and local `UserDefaults` persistence
+
 - Emotion family classification CSV data (`emotion_family_classification.csv`) with 10 emotion families
   - 120+ emotions mapped to primary/secondary family roles with weighted connections
   - Families: 고요(serenity), 활력(vitality), 신비(mystery), 권위(authority), 긴장(tension), 연결(connection), 온기(warmth), 회복(recovery), 집중(focus), 그늘(shadow)
@@ -31,6 +35,13 @@ All notable changes to this project are documented in this file.
 - Emotion data loading: 120+ points from `color_emotion_labeled_augmented.csv`
 - Family mapping: integrated but network visualization deferred pending UX refinement
 - Build signing: Apple Development Team (VQZUAA6R4Z, VQZUAA6R4Z)
+- Node `/analyze` remains an independent palette heuristic prototype; the iPad app currently uses local analysis.
+- Feedback correction/notes, advanced color tools, personal learning, remote sync, and the iPhone companion remain backlog items.
+
+### Documentation
+
+- Synchronized PRD, WBS, screen flow, wireframe, user journey, architecture summary, and app guides with the 2026-09-02 implementation state.
+- Added a portfolio source document and generated PDF.
 
 ## [1.0.1] - 2026-05-28
 

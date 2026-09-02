@@ -1,7 +1,9 @@
 # SentiVision Product Summary
 
-작성일: 2026-06-26
-문서 버전: v1.0
+최종 검증일: 2026-09-02
+문서 버전: v1.1
+
+상태 기준: **구현**은 코드와 기본 동작 경로가 연결된 기능, **프로토타입**은 검증 가능하지만 제품 요구사항 일부가 남은 기능, **백로그**는 설계만 있거나 아직 코드가 없는 기능을 뜻한다.
 
 ## 1. 한 줄 정의
 SentiVision은 사용자가 그림을 그리고 색을 고른 뒤, 그 결과를 감정 전시 카드처럼 해석해주는 iPad 우선 프리미엄 감성 컴퓨팅 제품이다.
@@ -61,12 +63,14 @@ SentiVision은 사용자가 그림을 그리고 색을 고른 뒤, 그 결과를
 - 저품질 광고 기반 무료 모델
 
 ## 6. 현재 구현 상태
-- Python CLI 분석 파이프라인 운영 중
-- KNN/KMeans 기반 색상-감정 검증 가능
-- 그림 입력용 연구 스크립트에서 `baseline_laplacian`, `paint_region`, `paint_region_conservative` 비교 가능
-- 시각화 PNG 및 CSV 보정 루프 존재
-- 보강본 CSV(`test/color_emotion_labeled_augmented.csv`)를 기준 데이터로 사용
-- 앱/API 설계 문서 정리 완료
+- **구현 — iPad 제작 앱**: 첫 실행 프로필·기준 감정·기준 색상·체감 강도 설정, PencilKit 드로잉, 펜/지우개/기본 팔레트/굵기 제어가 연결되어 있다.
+- **구현 — 온디바이스 분석**: 캔버스 전경 픽셀 추출, 최대 3개 색상 K-means, 로컬 CSV 기반 최근접 감정 예측, 10개 감정 패밀리 집계를 수행한다.
+- **구현 — 결과와 기록**: 감정 해석, 신뢰도, 대표색, 감정 패밀리 결과를 보여주고 전시 카드를 `UserDefaults`에 저장·재열람한다.
+- **구현 — 3D 분포**: SceneKit으로 120개 이상의 색상-감정 표본을 RGB 공간에 표시한다. 패밀리 네트워크 오버레이는 실험 코드만 유지하고 기본 화면에서는 비활성화한다.
+- **프로토타입 — Node API**: `GET /health`, `GET /metrics`, `POST /analyze`를 제공한다. `/analyze`는 온디바이스 KNN 계열과 별개인 warmth·saturation·brightness 휴리스틱 모델이며 앱에는 연결되지 않았다.
+- **프로토타입 — Python 검증 파이프라인**: Saliency, K-means, KNN, RandomForest 비교, 시각화 PNG, CSV 보정 루프를 제공한다. 보강본 CSV(`test/color_emotion_labeled_augmented.csv`)를 기준 데이터로 사용한다.
+- **구현 — 운영 실험 기반**: Jest, Playwright, 기능 플래그, A/B 할당, Canary 시뮬레이터, Docker, Prometheus/Grafana, GitHub Actions 자산이 있다.
+- **백로그**: 피드백 수정·메모 입력, 개인 분포 학습 반영, 색상 휠·HEX·RGB·스포이트, 원격 동기화, iPhone 감상 앱, 제품 수준 인증·데이터베이스가 남아 있다.
 
 ## 7. 참고 문서
 - PRD: [PRD_SentiVision.md](PRD_SentiVision.md)

@@ -2,19 +2,26 @@
 
 SentiVision iPad demo app source.
 
+Last verified: 2026-09-02
+
 ## Features
 
 - **3D Emotion Distribution Visualization**: Displays 120+ emotion points in 3D RGB color space
 - **Emotion Family Classification**: Integrates emotion-to-family mappings (primary/secondary roles)
 - **Point Cloud Rendering**: Clean visualization with only colored sphere points (no axes/grid/labels)
 - **PencilKit Canvas**: Integrated drawing interface with pen, eraser, color palette, and stroke control
+- **On-device Analysis**: Extracts foreground pixels, clusters up to three dominant colors, and maps them to bundled emotion samples
+- **Emotion Exhibition**: Shows interpretation, confidence, dominant colors, emotion scores, and family summary
+- **Local Archive**: Saves and reopens exhibition cards with `UserDefaults`
 
 ## Folder Layout
 
 - `iPadCanvasDemo.xcodeproj` - Xcode project
 - `iPadCanvasDemo/iPadCanvasDemo/App` - app source files
   - `EmotionDistributionSceneView.swift` - 3D SceneKit visualization with emotion point rendering
-  - `ContentView.swift` - Main UI container
+  - `CanvasRootView.swift` - Main tab container and analysis flow
+  - `LocalEmotionAnalysisService.swift` - On-device color and emotion analysis
+  - `EmotionArchiveView.swift` - Local exhibition archive
 - `iPadCanvasDemo/iPadCanvasDemo/Data` - bundled CSV data
   - `color_emotion_labeled_augmented.csv` - 120+ emotion points with RGB values
   - `emotion_family_classification.csv` - emotion-to-family mappings (10 families, 120+ emotions)
@@ -69,11 +76,17 @@ Located: `iPadCanvasDemo/Data/emotion_family_classification.csv`
 - ✅ Clean point-only visualization (no visual clutter)
 - ✅ Emotion family data integration
 - ✅ Real device deployment
+- ✅ First-run profile and baseline setup
+- ✅ PencilKit drawing to local analysis flow
+- ✅ Result exhibition and local archive
 
 ### Deferred/Experimental Features
 - ⏸️ Emotion family network overlay (lines connecting points to family centroids) - Currently disabled
 - ⏸️ Family-based point clustering visualization
 - ⏸️ Interactive point selection/detail view
+- ⏸️ Corrected emotion and note feedback
+- ⏸️ Advanced color wheel/HEX/RGB/eyedropper input
+- ⏸️ Remote API sync, authentication, and database storage
 
 ## Notes
 

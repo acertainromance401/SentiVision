@@ -1,7 +1,18 @@
 # WBS-to-Codebase 매핑 및 구현 우선순위
 
-작성일: 2026-03-27  
-기준 버전: WBS v1.6, PRD v1.1  
+최초 작성일: 2026-03-27
+최종 검증일: 2026-09-02
+기준 버전: WBS v1.7, PRD v1.2
+
+> 최신 상태 기준: 아래의 초기 계획표와 로드맵은 의사결정 이력을 보존한다. 현재 우선순위와 완료 여부는 이 스냅샷을 우선한다.
+
+| 영역 | 현재 코드 | 상태 | 다음 작업 |
+|---|---|---|---|
+| iPad 앱 | `app-development/iPadCanvasDemo` | 온보딩·캔버스·로컬 분석·결과·3D 분포·아카이브 구현 | 피드백, 개인 학습, 고급 색상 도구 |
+| Node API | `src/api` | health/metrics/팔레트 analyze 프로토타입 | 앱 계약·인증·저장 방향 결정 |
+| Python 검증 | `test`, `base_model` | 분석·모델 비교·시각화 운영 | 자동 품질 리포트와 재현성 강화 |
+| 실험/운영 | `experiments`, `.github`, `docker-compose.yml` | 기능 플래그·A/B·Canary·CI/CD·관측성 자산 구현 | 실제 제품 지표 연결 |
+| iPhone 앱 | 문서만 존재 | 백로그 | iPad 제품 검증 후 착수 |
 
 ---
 
@@ -166,10 +177,10 @@ def load_dataset(csv_path):
     ...
 ```
 
-#### Step 2: FastAPI 프로젝트 생성 (1주)
+#### Step 2: API 프로젝트 생성 (초기 계획, 현재 Node.js로 구현)
 ```
 sentipy/
-├── main.py                 # FastAPI 앱
+├── server.js               # Node.js HTTP 앱
 ├── config.py              # 환경 변수
 ├── models.py              # Pydantic 스키마
 ├── routes/
@@ -187,7 +198,7 @@ sentipy/
 - `/analyze` (POST) — palette → emotion (1번 호출당 ~100ms)
 - `/feedback` (POST) — CSV 업데이트
 
-**산출물**: 로컬 테스트 완료 FastAPI 서버
+**산출물**: 로컬 테스트 완료 API 서버
 
 ---
 
@@ -241,7 +252,7 @@ sentipy/
 ### Phase 6: 운영/배포 (1주, WBS 9)
 
 #### Step 1: CI/CD 파이프라인 (1주)
-- GitHub Actions (FastAPI 배포)
+- GitHub Actions (Node API 배포)
 - TestFlight (iOS 빌드 배포)
 - KPI 수집 (로그 → 대시보드)
 
@@ -275,7 +286,7 @@ sentipy/
 | 배포 자동화 | ❌ 미시작 | 1~2주 |
 
 **다음 액션 (즉시)**:
-1. FastAPI `main.py` 생성 + `/health` 엔드포인트 구현
+1. Node `src/api/server.js` + `/health` 엔드포인트 구현 — 완료
 2. `test/main_.py` 에서 `emotion_from_rgb()` 추출 → 모듈화
 3. iOS 프로토타입 리포 생성 + CanvasView 기본 구현
 

@@ -15,7 +15,7 @@ SentiVision의 아키텍처 및 운영 의사결정을 기록합니다.
 예시:
 
 - `0001-choose-knn-baseline-model.md`
-- `0002-use-fastapi-for-serving.md`
+- `0002-separate-on-device-analysis-and-node-api.md`
 
 ## Status Lifecycle
 
